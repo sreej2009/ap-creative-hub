@@ -1,0 +1,25 @@
+# Render Blueprint — one web service that serves the API and the storefront.
+# Render → New → Blueprint → pick this repo → paste your MongoDB Atlas URI → Apply.
+services:
+  - type: web
+    name: ap-creative-hub
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: SERVE_CLIENT
+        value: "true"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: APP_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false # set in the Render dashboard (MongoDB Atlas connection string)

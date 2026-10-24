@@ -1,0 +1,26 @@
+{
+  "name": "ap-creative-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A&P Creative Hub — full-stack e-commerce platform (storefront + admin)",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "concurrently -n api,web -c magenta,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w server && npm run build -w client",
+    "start": "npm run start -w server",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
+    "test": "npm run test -w server && npm run test -w client",
+    "seed": "npm run seed -w server",
+    "admin:create": "npm run admin:create -w server --",
+    "db:local": "npm run db:local -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}
