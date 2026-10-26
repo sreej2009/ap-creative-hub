@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fae6ec"/><stop offset="1" stop-color="#eab0c1"/></linearGradient>
+<radialGradient id="pearl" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#fbf7f1"/><stop offset="1" stop-color="#e6d9cc"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8cf9c"/><stop offset=".5" stop-color="#c39b57"/><stop offset="1" stop-color="#86642c"/></linearGradient>
+</defs>
+<rect width="800" height="1000" fill="url(#bg)"/>
+<path d="M150 900V430a250 250 0 0 1 500 0v470" fill="none" stroke="#c39b57" stroke-opacity=".45" stroke-width="2"/>
+<ellipse cx="400" cy="860" rx="230" ry="26" fill="#2a1f22" fill-opacity=".06"/>
+<g transform="translate(-40 -40) scale(.55) translate(330 380)"><g transform="translate(290 0)">
+      <circle cx="0" cy="380" r="22" fill="url(#gold)"/><circle cx="0" cy="380" r="9" fill="#a63a5f"/>
+      <path d="M0 402v120" stroke="url(#gold)" stroke-width="6"/>
+      <path d="M-30 520h60l-30 40z" fill="url(#gold)"/>
+      <path d="M0 560c-55 60-70 120-70 160a70 70 0 0 0 140 0c0-40-15-100-70-160Z" fill="url(#pearl)" stroke="#e1d2c2" stroke-width="2"/>
+      <ellipse cx="-22" cy="690" rx="12" ry="24" fill="#fff" fill-opacity=".8"/></g><g transform="translate(510 0)">
+      <circle cx="0" cy="380" r="22" fill="url(#gold)"/><circle cx="0" cy="380" r="9" fill="#a63a5f"/>
+      <path d="M0 402v120" stroke="url(#gold)" stroke-width="6"/>
+      <path d="M-30 520h60l-30 40z" fill="url(#gold)"/>
+      <path d="M0 560c-55 60-70 120-70 160a70 70 0 0 0 140 0c0-40-15-100-70-160Z" fill="url(#pearl)" stroke="#e1d2c2" stroke-width="2"/>
+      <ellipse cx="-22" cy="690" rx="12" ry="24" fill="#fff" fill-opacity=".8"/></g></g><g transform="translate(150 260) scale(.6)"><path d="M190 300c40 320 380 320 420 0" fill="none" stroke="url(#gold)" stroke-width="7" stroke-dasharray="2 14" stroke-linecap="round"/>
+    <path d="M190 300c40 320 380 320 420 0" fill="none" stroke="#c39b57" stroke-width="2.5"/>
+    <path d="M400 540l-6 34" stroke="url(#gold)" stroke-width="5"/>
+    <path d="M400 700c-90-55-120-95-120-135a60 60 0 0 1 120-20 60 60 0 0 1 120 20c0 40-30 80-120 135Z" fill="url(#gold)"/>
+    <path d="M400 670c-55-38-75-62-75-88a35 35 0 0 1 75-12" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="4"/></g>
+<path transform="translate(170 230) scale(1.4)" fill="#c39b57" d="M0-12c.6 5.6 2.9 9.6 12 12-9.1 2.4-11.4 6.4-12 12-.6-5.6-2.9-9.6-12-12C-2.9-2.4-.6-6.4 0-12Z"/><path transform="translate(640 330) scale(0.9)" fill="#a63a5f" d="M0-12c.6 5.6 2.9 9.6 12 12-9.1 2.4-11.4 6.4-12 12-.6-5.6-2.9-9.6-12-12C-2.9-2.4-.6-6.4 0-12Z"/><path transform="translate(610 760) scale(0.7)" fill="#c39b57" d="M0-12c.6 5.6 2.9 9.6 12 12-9.1 2.4-11.4 6.4-12 12-.6-5.6-2.9-9.6-12-12C-2.9-2.4-.6-6.4 0-12Z"/>
+<text x="400" y="965" text-anchor="middle" font-family="Georgia,serif" font-size="22" letter-spacing="8" fill="#86642c" fill-opacity=".7">SAMPLE IMAGE</text>
+</svg>
