@@ -58,7 +58,7 @@ function SidebarBody({ name, role, permissions, onLogout }: { name: string; role
         <NavItems permissions={permissions} />
       </nav>
       <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
-        <a href="/" target="_blank" rel="noopener" className="flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-[#d8c7c4] hover:bg-white/5 hover:text-white">
+        <a href={import.meta.env.BASE_URL} target="_blank" rel="noopener" className="flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-[#d8c7c4] hover:bg-white/5 hover:text-white">
           <ExternalLink className="size-4" /> View store
         </a>
         <button type="button" onClick={onLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-[#d8c7c4] hover:bg-white/5 hover:text-white">

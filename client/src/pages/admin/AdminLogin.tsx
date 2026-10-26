@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Feedback';
 import { Input } from '../../components/ui/Field';
 import { Sparkle } from '../../components/ui/Icons';
+import { DemoLoginHint } from '../../demo/DemoBanner';
 import { useAdminMe, type AdminSession } from '../../hooks/useAuth';
 import { useDocumentTitle } from '../../hooks/useStore';
 import { api, errorMessage } from '../../lib/api';
@@ -42,6 +43,7 @@ export default function AdminLogin() {
             <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-rose-700">Admin portal</p>
           </div>
           <form noValidate className="mt-8 space-y-4" onSubmit={form.handleSubmit((v) => login.mutate(v))}>
+            <DemoLoginHint kind="admin" onFill={(email, password) => form.reset({ email, password })} />
             {login.error && <Alert tone="danger">{errorMessage(login.error)}</Alert>}
             <Input label="Email" type="email" autoComplete="username" required {...form.register('email')} error={form.formState.errors.email?.message} />
             <Input label="Password" type="password" autoComplete="current-password" required {...form.register('password')} error={form.formState.errors.password?.message} />

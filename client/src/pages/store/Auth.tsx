@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Feedback';
 import { Input } from '../../components/ui/Field';
 import { Sparkle } from '../../components/ui/Icons';
+import { DemoLoginHint } from '../../demo/DemoBanner';
 import { useAuthActions, useMe } from '../../hooks/useAuth';
 import { useDocumentTitle } from '../../hooks/useStore';
 import { ApiError, api, errorMessage } from '../../lib/api';
@@ -70,6 +71,7 @@ export function Login() {
       }
     >
       <form noValidate className="space-y-4" onSubmit={form.handleSubmit((v) => login.mutate(v, { onSuccess: () => navigate(next, { replace: true }) }))}>
+        <DemoLoginHint kind="customer" onFill={(email, password) => form.reset({ email, password })} />
         {login.error && <Alert tone="danger">{errorMessage(login.error)}</Alert>}
         <Input label="Email" type="email" autoComplete="email" required {...form.register('email')} error={form.formState.errors.email?.message} />
         <Input label="Password" type="password" autoComplete="current-password" required {...form.register('password')} error={form.formState.errors.password?.message} />

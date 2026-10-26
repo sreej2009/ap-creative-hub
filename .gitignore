@@ -11,6 +11,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!client/.env.demo
 *.pem
 *.key
 
@@ -35,3 +36,4 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+client/dist-demo/

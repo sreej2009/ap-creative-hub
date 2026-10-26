@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { PageHeader, Panel, Table } from '../../components/admin/AdminLayout';
 import { TrendChart } from '../../components/admin/TrendChart';
 import { Badge, ErrorState, Skeleton } from '../../components/ui/Feedback';
+import { IS_DEMO } from '../../demo/DemoBanner';
 import { useDocumentTitle } from '../../hooks/useStore';
 import { api } from '../../lib/api';
 import { PAYMENT_STATUS_LABELS, paymentTone, statusTone } from '../../lib/constants';
@@ -202,7 +203,9 @@ export default function Dashboard() {
 
       <p className="mt-6 flex items-start gap-2 text-xs text-muted">
         <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-        All figures come from live database records. Sales count only payments verified with Razorpay (signature + API, or signed webhook) and COD cash recorded by staff, minus refunds processed in the period.
+        {IS_DEMO
+          ? 'Demo: figures are calculated from the sample orders stored in this browser, using the same rules as the live store.'
+          : 'All figures come from live database records. Sales count only payments verified with Razorpay (signature + API, or signed webhook) and COD cash recorded by staff, minus refunds processed in the period.'}
       </p>
     </>
   );

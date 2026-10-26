@@ -25,15 +25,14 @@ export function CouponBox({ code, setCode, quote }: { code: string; setCode: (c:
   const [input, setInput] = useState(code);
   useEffect(() => setInput(code), [code]);
   const c = quote?.coupon;
+  const apply = () => {
+    if (input.trim()) setCode(input.trim().toUpperCase());
+  };
+  // Not a <form>: this box is also rendered inside the checkout form, and nested
+  // forms would send "Apply" to the checkout form instead.
   return (
     <div>
-      <form
-        className="flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setCode(input.trim().toUpperCase());
-        }}
-      >
+      <div role="group" aria-label="Coupon" className="flex gap-2">
         <label htmlFor="coupon" className="sr-only">
           Coupon code
         </label>
@@ -43,15 +42,21 @@ export function CouponBox({ code, setCode, quote }: { code: string; setCode: (c:
             id="coupon"
             value={input}
             onChange={(e) => setInput(e.target.value.toUpperCase())}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault(); // don't submit the surrounding checkout form
+                apply();
+              }
+            }}
             placeholder="Coupon code"
             maxLength={30}
             className="h-11 w-full rounded-full border border-line-strong bg-paper pl-9 pr-3 text-sm uppercase tracking-wider placeholder:normal-case placeholder:tracking-normal focus:border-rose-600 focus:outline-none"
           />
         </div>
-        <Button type="submit" variant="secondary" disabled={!input.trim()}>
+        <Button type="button" variant="secondary" disabled={!input.trim()} onClick={apply}>
           Apply
         </Button>
-      </form>
+      </div>
       {c && code && (
         <div className="mt-2 flex items-center justify-between text-[13px]">
           {c.valid ? (

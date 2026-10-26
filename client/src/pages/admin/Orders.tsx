@@ -6,6 +6,7 @@ import { FilterBar, PageHeader, Panel, Table } from '../../components/admin/Admi
 import { Badge, EmptyState, ErrorState, Skeleton } from '../../components/ui/Feedback';
 import { Checkbox, Input, Select } from '../../components/ui/Field';
 import { Pagination } from '../../components/ui/Pagination';
+import { IS_DEMO } from '../../demo/DemoBanner';
 import { useCan } from '../../hooks/useAuth';
 import { useDebounced, useDocumentTitle } from '../../hooks/useStore';
 import { api } from '../../lib/api';
@@ -55,7 +56,7 @@ export default function Orders() {
         title="Orders"
         description={data ? `${data.meta.total} orders` : undefined}
         actions={
-          canExport && (
+          canExport && !IS_DEMO && (
             <a
               href={api.url('/admin/orders/export', filters)}
               className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-paper px-4 text-[13px] font-medium hover:border-rose-600 hover:text-rose-700"

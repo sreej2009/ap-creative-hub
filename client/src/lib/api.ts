@@ -3,6 +3,8 @@
  * state-changing requests, and normalises errors into ApiError.
  */
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+/** Static demo build: requests are answered by an in-browser sample backend. */
+const DEMO = import.meta.env.VITE_DEMO === 'true';
 
 export class ApiError extends Error {
   constructor(
@@ -62,6 +64,10 @@ export function buildQuery(query?: Query) {
 }
 
 async function request<T>(path: string, opts: RequestOptions = {}, retried = false): Promise<T> {
+  if (DEMO) {
+    const { demoRequest } = await import('../demo/mockApi');
+    return demoRequest<T>(opts.method ?? 'GET', path, opts.query, opts.body);
+  }
   const method = opts.method ?? 'GET';
   const headers: Record<string, string> = { Accept: 'application/json' };
   const isForm = typeof FormData !== 'undefined' && opts.body instanceof FormData;
@@ -106,7 +112,7 @@ export const api = {
   upload: <T>(path: string, form: FormData) => request<T>(path, { method: 'POST', body: form }),
   /** Absolute URL for downloads (e.g. CSV export) that rely on cookies. */
   url: (path: string, query?: Query) => `${API_BASE}/api/v1${path}${buildQuery(query)}`,
-  warmCsrf: () => fetchCsrf().catch(() => undefined),
+  warmCsrf: () => (DEMO ? Promise.resolve(undefined) : fetchCsrf().catch(() => undefined)),
 };
 
 export function errorMessage(err: unknown, fallback = 'Something went wrong. Please try again.') {

@@ -5,6 +5,7 @@ import App from './App';
 import { ToastProvider } from './components/ui/Toast';
 import { CartProvider } from './hooks/useCart';
 import { WishlistProvider } from './hooks/useWishlist';
+import { DemoBanner } from './demo/DemoBanner';
 import { ApiError, api } from './lib/api';
 import './index.css';
 
@@ -27,6 +28,7 @@ createRoot(document.getElementById('root')!).render(
       <ToastProvider>
         <CartProvider>
           <WishlistProvider>
+            <DemoBanner />
             <App />
           </WishlistProvider>
         </CartProvider>
