@@ -33,7 +33,7 @@ npm run dev                               # storefront http://localhost:5173, ad
 3. When the deploy is green, set `APP_URL` to your Render URL (e.g. `https://ap-creative-hub.onrender.com`).
 4. From your computer, using the Atlas string as `MONGODB_URI`: `npm run seed -- --force` (optional sample catalogue) and `npm run admin:create -- --email you@… --name "…"`.
 
-Razorpay, Cloudinary and email can be added later as environment variables — the store runs without them (COD only, no uploads, emails logged as skipped).
+Razorpay, Cloudinary and email can be added later as environment variables — the store runs without them (no uploads, emails logged as skipped). The store is **prepaid only with no returns** by default, so customers can check out once Razorpay keys are added; COD and a return window can be switched on later in **Admin → Settings**.
 
 ## What's included
 

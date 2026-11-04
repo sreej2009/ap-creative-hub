@@ -171,7 +171,7 @@ Every attempt is logged in **Admin → Notifications** as `sent`, `failed` or `s
 
 ## 11. Store settings
 
-**Admin → Settings** (admins only) controls the announcement bar, homepage hero, flat shipping fee and free-shipping threshold, COD on/off + fee + maximum order value, the return window, and contact/social links (support email, phone, WhatsApp number with country code, Instagram URL). Shipping, COD and returns copy on the storefront and policy pages update automatically.
+**Admin → Settings** (admins only) controls the announcement bar, homepage hero, flat shipping fee and free-shipping threshold, COD on/off + fee + maximum order value, the return window, and contact/social links (support email, phone, WhatsApp number with country code, Instagram URL). Shipping, COD and returns copy on the storefront and policy pages update automatically. New stores start with **COD off and no returns** (prepaid only; damaged/wrong items are replaced) — the refund policy page at `/refund-policy` reflects this.
 
 ## 12. Tests
 

@@ -276,6 +276,7 @@ export default function Checkout() {
                     : q?.paymentMethods.razorpay.reason ?? 'Checking availability…'
                 }
               />
+              {q?.paymentMethods.cod.available && (
               <PaymentOption
                 value="cod"
                 checked={paymentMethod === 'cod'}
@@ -289,6 +290,7 @@ export default function Checkout() {
                     : q?.paymentMethods.cod.reason ?? 'Checking availability…'
                 }
               />
+              )}
             </div>
             {errors.paymentMethod?.message && <p className="mt-2 text-xs text-danger">{errors.paymentMethod.message}</p>}
             <div className="mt-6 space-y-4">
@@ -343,7 +345,7 @@ export default function Checkout() {
           </Button>
           <p className="text-center text-xs leading-relaxed text-muted">
             By placing your order you agree to our <Link to="/terms" className="underline">terms</Link> and{' '}
-            <Link to="/returns" className="underline">returns policy</Link>.
+            <Link to="/refund-policy" className="underline">refund policy</Link>.
           </p>
         </aside>
       </form>

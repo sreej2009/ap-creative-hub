@@ -142,7 +142,7 @@ export interface IStoreSettings {
 const StoreSettingsSchema = new Schema<IStoreSettings>(
   {
     _id: { type: String, default: 'store' },
-    announcement: { type: String, default: 'Free shipping on orders above ₹999 · COD available', maxlength: 160 },
+    announcement: { type: String, default: 'Free shipping on orders above ₹999', maxlength: 160 },
     hero: {
       eyebrow: { type: String, default: 'New season edit', maxlength: 60 },
       title: { type: String, default: 'Little sparkles for every day', maxlength: 120 },
@@ -161,11 +161,11 @@ const StoreSettingsSchema = new Schema<IStoreSettings>(
       estimatedDays: { type: String, default: '4–7 business days', maxlength: 60 },
     },
     cod: {
-      enabled: { type: Boolean, default: true },
+      enabled: { type: Boolean, default: false },
       fee: { type: Number, default: 4900 },
       maxOrderValue: { type: Number, default: 500000 },
     },
-    returns: { windowDays: { type: Number, default: 7 } },
+    returns: { windowDays: { type: Number, default: 0 } },
     contact: {
       email: { type: String, default: '', maxlength: 254 },
       phone: { type: String, default: '', maxlength: 20 },

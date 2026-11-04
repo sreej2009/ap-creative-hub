@@ -1,4 +1,4 @@
-import { ChevronDown, Heart, Menu, Search, ShoppingBag, User as UserIcon } from 'lucide-react';
+import { ArrowUp, ChevronDown, Heart, Menu, Search, ShoppingBag, User as UserIcon } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useMe } from '../../hooks/useAuth';
@@ -240,101 +240,99 @@ function Header() {
   );
 }
 
+const FOOTER_LINKS = [
+  { to: '/shop', label: 'Shop' },
+  { to: '/track', label: 'Track Order' },
+  { to: '/shipping', label: 'Shipping' },
+  { to: '/refund-policy', label: 'Refund Policy' },
+  { to: '/privacy', label: 'Privacy Policy' },
+  { to: '/terms', label: 'Terms & Conditions' },
+  { to: '/faq', label: 'FAQ' },
+  { to: '/contact', label: 'Contact' },
+];
+
 function Footer() {
   const { data: settings } = useStoreSettings();
-  const { data: categories } = useCategories();
   const c = settings?.contact;
+  const social = 'inline-flex size-10 items-center justify-center rounded-full border border-line-strong text-ink-soft transition-colors hover:border-rose-600 hover:text-rose-700';
   return (
-    <footer className="mt-24 bg-plum-900 text-[#e9dcd9]">
-      <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <div>
-          <span className="font-display text-3xl font-semibold italic text-white">
-            A<span className="text-gold-400">&amp;</span>P <span className="not-italic text-xl font-medium tracking-wide text-gold-300">Creative Hub</span>
-          </span>
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-[#cdbcb9]">
-            Handpicked jewellery, one-gram gold, hair accessories and little gifts — styled with love and shipped across India.
-          </p>
-          <div className="mt-5 flex gap-2">
-            {c?.instagram && (
-              <a href={c.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex size-10 items-center justify-center rounded-full border border-white/15 hover:border-gold-400 hover:text-gold-300">
+    <footer className="mt-24 border-t border-line bg-paper">
+      <div className="container-page flex flex-col items-center gap-6 py-10 text-center sm:py-12">
+        <Link to="/" aria-label="A&P Creative Hub home">
+          <Logo />
+        </Link>
+        <nav aria-label="Footer">
+          <ul className="flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-3 text-sm text-ink-soft">
+            {FOOTER_LINKS.map((l) => (
+              <li key={l.to}>
+                <Link to={l.to} className="hover:text-rose-700">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        {(c?.instagram || c?.whatsapp) && (
+          <div className="flex gap-3">
+            {c.instagram && (
+              <a href={c.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className={social}>
                 <InstagramIcon className="size-[18px]" />
               </a>
             )}
-            {c?.whatsapp && (
-              <a href={whatsappLink(c.whatsapp)} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="inline-flex size-10 items-center justify-center rounded-full border border-white/15 hover:border-gold-400 hover:text-gold-300">
+            {c.whatsapp && (
+              <a href={whatsappLink(c.whatsapp)} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className={social}>
                 <WhatsAppIcon className="size-[18px]" />
               </a>
             )}
           </div>
-        </div>
-        <FooterCol title="Shop" links={[{ to: '/shop', label: 'Shop all' }, ...(categories ?? []).map((cat) => ({ to: `/shop/${cat.slug}`, label: cat.name })), { to: '/shop?onSale=true', label: 'Special offers' }]} />
-        <FooterCol
-          title="Help"
-          links={[
-            { to: '/track', label: 'Track your order' },
-            { to: '/shipping', label: 'Shipping' },
-            { to: '/returns', label: 'Returns & refunds' },
-            { to: '/faq', label: 'FAQ' },
-            { to: '/contact', label: 'Contact us' },
-          ]}
-        />
-        <div>
-          <FooterCol title="About" links={[{ to: '/privacy', label: 'Privacy policy' }, { to: '/terms', label: 'Terms of service' }]} />
-          {(c?.email || c?.phone) && (
-            <div className="mt-6 space-y-1 text-sm text-[#cdbcb9]">
-              {c.email && (
-                <a href={`mailto:${c.email}`} className="block hover:text-gold-300">
-                  {c.email}
-                </a>
-              )}
-              {c.phone && <p>{c.phone}</p>}
-              {c.hours && <p className="text-xs opacity-80">{c.hours}</p>}
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="border-t border-white/10">
-        <div className="container-page flex flex-col items-center justify-between gap-2 py-5 text-xs text-[#b9a6a3] sm:flex-row">
-          <p>© {new Date().getFullYear()} A&amp;P Creative Hub. All rights reserved.</p>
-          <p className="flex items-center gap-1.5">
-            <Sparkle className="size-2.5 text-gold-400" /> Secure online payments{settings?.payments.cod ? ' · Cash on Delivery available' : ''}
-          </p>
-        </div>
+        )}
+        <p className="text-xs text-muted">© {new Date().getFullYear()} A&amp;P Creative Hub. All rights reserved.</p>
       </div>
     </footer>
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: { to: string; label: string }[] }) {
-  return (
-    <div>
-      <h2 className="font-sans text-[11px] font-semibold uppercase tracking-[0.24em] text-gold-300">{title}</h2>
-      <ul className="mt-4 space-y-2.5 text-sm">
-        {links.map((l) => (
-          <li key={l.to + l.label}>
-            <Link to={l.to} className="text-[#e3d4d1] hover:text-white">
-              {l.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function WhatsAppFab() {
+/** WhatsApp chat button plus a back-to-top button that appears once the page is scrolled. */
+function FloatingButtons() {
   const { data } = useStoreSettings();
-  if (!data?.contact.whatsapp) return null;
+  const [showTop, setShowTop] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 600);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  const toTop = () => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+  };
   return (
-    <a
-      href={whatsappLink(data.contact.whatsapp)}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Chat with us on WhatsApp"
-      className="fixed bottom-5 right-5 z-30 inline-flex size-13 items-center justify-center rounded-full bg-[#1f9d55] text-white shadow-lift transition-transform hover:scale-105"
-    >
-      <WhatsAppIcon className="size-6" />
-    </a>
+    <div className="fixed bottom-5 right-5 z-30 flex flex-col items-center gap-3">
+      {data?.contact.whatsapp && (
+        <a
+          href={whatsappLink(data.contact.whatsapp)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Chat with us on WhatsApp"
+          className="inline-flex size-13 items-center justify-center rounded-full bg-[#1f9d55] text-white shadow-lift transition-transform hover:scale-105"
+        >
+          <WhatsAppIcon className="size-6" />
+        </a>
+      )}
+      <button
+        type="button"
+        onClick={toTop}
+        aria-label="Back to top"
+        tabIndex={showTop ? 0 : -1}
+        aria-hidden={!showTop}
+        className={cn(
+          'inline-flex size-11 items-center justify-center rounded-full bg-ink text-ivory shadow-lift transition-all duration-300 hover:bg-rose-700',
+          showTop ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0',
+        )}
+      >
+        <ArrowUp className="size-5" />
+      </button>
+    </div>
   );
 }
 
@@ -355,7 +353,7 @@ export function StoreLayout() {
       </main>
       <Footer />
       <CartDrawer />
-      <WhatsAppFab />
+      <FloatingButtons />
     </div>
   );
 }

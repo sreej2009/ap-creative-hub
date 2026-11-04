@@ -37,6 +37,10 @@ export interface RazorpaySuccess {
  * our server — success here does NOT mean the order is paid.
  */
 export async function openRazorpay(payment: RazorpayCheckout): Promise<RazorpaySuccess | null> {
+  if (import.meta.env.VITE_DEMO === 'true') {
+    const { openDemoPayment } = await import('../demo/demoPayment');
+    return openDemoPayment(payment);
+  }
   await loadRazorpay();
   return new Promise((resolve, reject) => {
     const rzp = new window.Razorpay!({

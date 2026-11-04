@@ -300,7 +300,7 @@ const PRODUCTS: SP[] = [
 ];
 
 export const DEFAULT_SETTINGS: DSettings = {
-  announcement: 'Free shipping on orders above ₹999 · COD available',
+  announcement: 'Free shipping on orders above ₹999',
   hero: {
     eyebrow: 'New season edit',
     title: 'Little sparkles for every day',
@@ -310,8 +310,8 @@ export const DEFAULT_SETTINGS: DSettings = {
     imageUrl: '/samples/hero.svg', // rendered as the layered inline illustration
   },
   shipping: { flatFee: 7900, freeShippingThreshold: 99900, estimatedDays: '4–7 business days' },
-  cod: { enabled: true, fee: 4900, maxOrderValue: 500000 },
-  returns: { windowDays: 7 },
+  cod: { enabled: false, fee: 4900, maxOrderValue: 500000 },
+  returns: { windowDays: 0 },
   contact: { email: '', phone: '', whatsapp: '', instagram: 'https://www.instagram.com/', address: '', hours: 'Mon–Sat, 10am–7pm IST' },
 };
 
@@ -431,17 +431,17 @@ export function createSeed(now = Date.now()): DemoDB {
   const plans: { days: number; c: number; items: [number, number, number?][]; method: 'cod' | 'razorpay'; status: string; coupon?: string; ret?: boolean }[] = [
     { days: 28, c: 0, items: [[4, 1], [7, 1]], method: 'razorpay', status: 'delivered' },
     { days: 25, c: 1, items: [[9, 1]], method: 'razorpay', status: 'delivered' },
-    { days: 22, c: 2, items: [[0, 2], [14, 1]], method: 'cod', status: 'delivered' },
+    { days: 22, c: 2, items: [[0, 2], [14, 1]], method: 'razorpay', status: 'delivered' },
     { days: 19, c: 3, items: [[12, 1]], method: 'razorpay', status: 'delivered', coupon: 'WELCOME10' },
-    { days: 17, c: 4, items: [[5, 2]], method: 'cod', status: 'delivered', ret: true },
+    { days: 17, c: 4, items: [[5, 2]], method: 'razorpay', status: 'delivered' },
     { days: 14, c: 0, items: [[2, 1, 0], [4, 1]], method: 'razorpay', status: 'delivered' },
-    { days: 12, c: 1, items: [[15, 1]], method: 'cod', status: 'cancelled' },
+    { days: 12, c: 1, items: [[15, 1]], method: 'razorpay', status: 'cancelled' },
     { days: 10, c: 2, items: [[10, 1, 1]], method: 'razorpay', status: 'delivered', coupon: 'FESTIVE150' },
-    { days: 7, c: 3, items: [[7, 2], [0, 1]], method: 'cod', status: 'out_for_delivery' },
+    { days: 7, c: 3, items: [[7, 2], [0, 1]], method: 'razorpay', status: 'out_for_delivery' },
     { days: 5, c: 4, items: [[13, 1]], method: 'razorpay', status: 'shipped' },
     { days: 3, c: 0, items: [[9, 1], [11, 1]], method: 'razorpay', status: 'packed' },
-    { days: 2, c: 2, items: [[3, 1]], method: 'cod', status: 'processing' },
-    { days: 1, c: 1, items: [[12, 2]], method: 'cod', status: 'placed' },
+    { days: 2, c: 2, items: [[3, 1]], method: 'razorpay', status: 'processing' },
+    { days: 1, c: 1, items: [[12, 2]], method: 'razorpay', status: 'payment_confirmed' },
     { days: 0, c: 3, items: [[4, 1], [6, 1]], method: 'razorpay', status: 'payment_confirmed' },
   ];
   const customerUsers = users.filter((u) => u.role === 'customer');

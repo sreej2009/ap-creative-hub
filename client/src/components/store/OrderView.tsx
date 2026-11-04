@@ -181,7 +181,7 @@ export function OrderView({
               {order.statusLabel}
             </Badge>
             <span className="text-xs text-muted">
-              {order.payment.method === 'cod' ? 'Cash on Delivery' : 'Paid online'} · {PAYMENT_STATUS_LABELS[order.payment.status]}
+              {order.payment.method === 'cod' ? 'Cash on Delivery' : 'Online payment'} · {PAYMENT_STATUS_LABELS[order.payment.status]}
             </span>
           </div>
         </div>

@@ -13,6 +13,7 @@ import { Product } from '../src/models/Product.js';
 import { User, type Role } from '../src/models/User.js';
 import { hashPassword } from '../src/services/auth.service.js';
 import { listingPricing } from '../src/lib/pricing.js';
+import { StoreSettings } from '../src/models/misc.js';
 import { invalidateSettingsCache } from '../src/services/settings.service.js';
 import { notifications } from '../src/services/notification.service.js';
 
@@ -29,6 +30,8 @@ export async function resetDb() {
   await notifications.flush();
   const collections = await mongoose.connection.db!.collections();
   await Promise.all(collections.map((c) => c.deleteMany({})));
+  // The store ships with COD and returns off; tests turn them on so those code paths stay covered.
+  await StoreSettings.create({ _id: 'store', cod: { enabled: true, fee: 4900, maxOrderValue: 500000 }, returns: { windowDays: 7 } });
   invalidateSettingsCache();
   setTransactionSupportForTests(undefined);
 }

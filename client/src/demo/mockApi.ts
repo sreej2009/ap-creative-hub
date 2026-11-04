@@ -20,7 +20,7 @@ import {
   type DVariant,
 } from './data';
 
-const KEY = 'ap_demo_db_v1';
+const KEY = 'ap_demo_db_v2';
 const CUSTOMER_KEY = 'ap_demo_customer';
 const ADMIN_KEY = 'ap_demo_admin';
 
@@ -363,7 +363,7 @@ function quote(d: DemoDB, body: Body) {
   return {
     currency: 'INR' as const, lines, subtotal, discount, shipping, codFee, total: pre + codFee, itemCount, hasIssues: lines.some((l) => l.issue), coupon, couponCode,
     shippingInfo: { flatFee: s.shipping.flatFee, freeShippingThreshold: s.shipping.freeShippingThreshold, amountToFreeShipping: s.shipping.freeShippingThreshold > 0 ? Math.max(0, s.shipping.freeShippingThreshold - after) : 0 },
-    paymentMethods: { razorpay: { available: false, reason: 'Online payment (Razorpay) is switched on at launch — this demo uses Cash on Delivery.' }, cod },
+    paymentMethods: { razorpay: { available: true }, cod },
   };
 }
 
@@ -415,7 +415,7 @@ function customerOrder(d: DemoDB, o: DOrder, mask = false) {
     actions: {
       canCancel: CANCELLABLE_BY_CUSTOMER.includes(o.status),
       canRequestReturn: o.status === 'delivered' && days > 0 && !!delivered && Date.now() - delivered <= days * 86400_000,
-      canPay: false,
+      canPay: o.status === 'pending_payment' && o.payment.method === 'razorpay',
     },
   };
 }
@@ -488,8 +488,8 @@ function placeOrder(d: DemoDB, body: Body) {
   if (q.hasIssues || !q.lines.length) throw err(409, 'CART_CHANGED', 'Some items in your cart have changed. Please review your cart.', { quote: q });
   if (body.couponCode && q.coupon && !q.coupon.valid) throw err(422, str(q.coupon.reason), str(q.coupon.message));
   if (body.expectedTotal !== undefined && Number(body.expectedTotal) !== q.total) throw err(409, 'PRICE_CHANGED', 'Prices have changed since you loaded checkout. Please review the updated total.', { quote: q });
-  if (body.paymentMethod === 'razorpay') throw err(503, 'PAYMENT_NOT_CONFIGURED', 'Online payment is switched on at launch. Please choose Cash on Delivery in this demo.');
-  if (!q.paymentMethods.cod.available) throw err(422, 'COD_UNAVAILABLE', q.paymentMethods.cod.reason ?? 'Cash on Delivery is unavailable.');
+  const online = body.paymentMethod !== 'cod';
+  if (!online && !q.paymentMethods.cod.available) throw err(422, 'COD_UNAVAILABLE', q.paymentMethods.cod.reason ?? 'Cash on Delivery is unavailable.');
 
   const now = nowIso();
   const id = newId('o');
@@ -515,9 +515,11 @@ function placeOrder(d: DemoDB, body: Body) {
     items: q.lines.map((l) => ({ product: l.productId, variantId: l.variantId, name: l.name, sku: l.sku, variantLabel: l.variantLabel, image: l.image, unitPrice: l.unitPrice, compareAtPrice: l.compareAtPrice, quantity: l.quantity, lineTotal: l.lineTotal })),
     pricing: { subtotal: q.subtotal, discount: q.discount, shipping: q.shipping, codFee: q.codFee, total: q.total },
     coupon: q.couponCode ? { code: q.couponCode, discount: q.discount, released: false } : null,
-    payment: { method: 'cod', status: 'cod_pending', razorpayOrderId: null, razorpayPaymentId: null, paidAt: null, amountPaid: 0, amountRefunded: 0, refundReserved: 0 },
-    status: 'placed', inventoryState: 'committed',
-    timeline: [{ status: 'placed', at: now, actor, note: 'Order placed (Cash on Delivery)' }],
+    payment: online
+      ? { method: 'razorpay', status: 'awaiting_payment', razorpayOrderId: `order_demo_${suffix}`, razorpayPaymentId: null, paidAt: null, amountPaid: 0, amountRefunded: 0, refundReserved: 0 }
+      : { method: 'cod', status: 'cod_pending', razorpayOrderId: null, razorpayPaymentId: null, paidAt: null, amountPaid: 0, amountRefunded: 0, refundReserved: 0 },
+    status: online ? 'pending_payment' : 'placed', inventoryState: 'committed',
+    timeline: [{ status: online ? 'pending_payment' : 'placed', at: now, actor, note: online ? 'Order created — awaiting payment' : 'Order placed (Cash on Delivery)' }],
     internalNotes: [], shipment: { courierName: null, trackingNumber: null, trackingUrl: null, shippedAt: null, deliveredAt: null },
     cancellation: null, returnRequest: null, attention: null, customerNote: str(body.customerNote) || null, whatsappOptIn: bool(body.whatsappOptIn),
     trackingToken: `demo-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`.slice(0, 32),
@@ -528,8 +530,40 @@ function placeOrder(d: DemoDB, body: Body) {
     const exists = user.addresses.some((a) => a.line1.toLowerCase() === addr.line1.toLowerCase() && a.pincode === addr.pincode);
     if (!exists) user.addresses.push({ ...addr, _id: newId('ad'), country: 'IN', isDefault: user.addresses.length === 0 });
   }
-  notify(d, 'order_confirmation', order);
-  return { order: customerOrder(d, order), trackingToken: order.trackingToken, payment: null };
+  if (!online) notify(d, 'order_confirmation', order);
+  return { order: customerOrder(d, order), trackingToken: order.trackingToken, payment: online ? demoCheckout(order) : null };
+}
+
+/** Shape of the Razorpay checkout payload; the demo opens a simulated payment window instead. */
+function demoCheckout(o: DOrder) {
+  return {
+    provider: 'razorpay' as const, keyId: 'rzp_demo', mode: 'test' as const, razorpayOrderId: o.payment.razorpayOrderId!, amount: o.pricing.total, currency: 'INR',
+    name: 'A&P Creative Hub', description: `Order ${o.orderNumber}`, prefill: { name: o.customer.name, email: o.customer.email, contact: o.customer.phone }, expiresAt: null,
+  };
+}
+
+function payableOrder(d: DemoDB, body: Body) {
+  const r = accessibleOrder(d, str(body.orderNumber), str(body.token) || undefined);
+  if (!r) throw notFound('Order');
+  if (r.o.status !== 'pending_payment' || r.o.payment.method !== 'razorpay') throw err(409, 'ORDER_NOT_PAYABLE', 'This order no longer needs payment.');
+  return r.o;
+}
+
+function confirmDemoPayment(d: DemoDB, body: Body) {
+  // Like the server, verification is tied to the gateway order id rather than a session or tracking token.
+  const o = d.orders.find((x) => x.orderNumber === str(body.orderNumber).toUpperCase());
+  if (!o) throw notFound('Order');
+  if (o.status !== 'pending_payment' || o.payment.method !== 'razorpay') throw err(409, 'ORDER_NOT_PAYABLE', 'This order no longer needs payment.');
+  if (!body.razorpay_order_id || str(body.razorpay_order_id) !== o.payment.razorpayOrderId) throw err(400, 'PAYMENT_VERIFICATION_FAILED', 'Payment could not be verified.');
+  const now = nowIso();
+  const paymentId = str(body.razorpay_payment_id);
+  o.payment = { ...o.payment, status: 'paid', razorpayPaymentId: paymentId, paidAt: now, amountPaid: o.pricing.total };
+  o.status = 'payment_confirmed';
+  o.timeline.push({ status: 'payment_confirmed', at: now, actor: { type: 'system', id: null, name: 'System' }, note: 'Payment received (demo — no money charged)' });
+  o.transactions.push({ id: newId('t'), provider: 'razorpay', type: 'payment', status: 'captured', amount: o.pricing.total, providerOrderId: o.payment.razorpayOrderId, providerPaymentId: paymentId, providerRefundId: null, method: 'upi', verifiedVia: ['signature+api'], errorDescription: null, reference: 'Demo payment — no real money', createdAt: now });
+  o.updatedAt = now;
+  notify(d, 'payment_confirmation', o);
+  return { order: customerOrder(d, o) };
 }
 
 /* ------------------------------ Dashboard ---------------------------- */
@@ -650,7 +684,7 @@ route('GET', '/auth/admin/me', () => {
 });
 
 /* Storefront */
-const publicSettings = (d: DemoDB) => ({ ...d.settings, payments: { razorpay: { enabled: false, mode: null }, cod: d.settings.cod.enabled } });
+const publicSettings = (d: DemoDB) => ({ ...d.settings, payments: { razorpay: { enabled: true, mode: 'test' }, cod: d.settings.cod.enabled } });
 route('GET', '/store/settings', ({ d }) => publicSettings(d));
 route('GET', '/home', ({ d }) => {
   const active = activeCategoryIds(d);
@@ -706,12 +740,8 @@ route('POST', '/cart/quote', ({ d, body }) => {
   return rest;
 });
 route('POST', '/checkout/orders', ({ d, body }) => placeOrder(d, body));
-route('POST', '/payments/razorpay/verify', () => {
-  throw err(503, 'PAYMENT_NOT_CONFIGURED', 'Online payment is switched on at launch.');
-});
-route('POST', '/payments/razorpay/retry', () => {
-  throw err(503, 'PAYMENT_NOT_CONFIGURED', 'Online payment is switched on at launch.');
-});
+route('POST', '/payments/razorpay/verify', ({ d, body }) => confirmDemoPayment(d, body));
+route('POST', '/payments/razorpay/retry', ({ d, body }) => ({ payment: demoCheckout(payableOrder(d, body)) }));
 route('GET', '/track/:orderNumber', ({ d, params, q }) => {
   const r = ORDER_NO.test(params.orderNumber.toUpperCase()) ? accessibleOrder(d, params.orderNumber, str(q.token) || undefined) : null;
   if (!r) throw notFound('Order');

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, RotateCcw, ShieldCheck, Truck } from 'lucide-react';
+import { ArrowRight, BadgeCheck, ShieldCheck, Truck } from 'lucide-react';
 import { useRef, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { CategoryArchCard } from '../../components/store/CategoryArchCard';
@@ -110,11 +110,11 @@ function Hero({ hero }: { hero?: HomeData['hero'] }) {
               </li>
               <li className="flex flex-col gap-1.5">
                 <ShieldCheck className="size-5 text-gold-500" aria-hidden />
-                {settings.payments.cod ? 'Secure payments & COD' : 'Secure online payments'}
+                Secure online payments
               </li>
               <li className="flex flex-col gap-1.5">
-                <RotateCcw className="size-5 text-gold-500" aria-hidden />
-                {settings.returns.windowDays > 0 ? `Easy ${settings.returns.windowDays}-day returns` : 'Quality checked'}
+                <BadgeCheck className="size-5 text-gold-500" aria-hidden />
+                Quality checked before dispatch
               </li>
             </ul>
           )}
@@ -140,13 +140,13 @@ function CategoryArches({ categories }: { categories?: Category[] }) {
         ref={grid}
         data-motion={motion ? 'on' : 'off'}
         data-revealed={revealed ? 'true' : 'false'}
-        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-6 sm:overflow-visible sm:px-0 lg:grid-cols-8"
+        className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-4 sm:gap-6 lg:grid-cols-8"
       >
         {(items ?? Array.from({ length: 8 }, () => null)).map((c, i) =>
           c ? (
             <CategoryArchCard key={c.id} category={c} index={i} interactive={motion && finePointer} />
           ) : (
-            <div key={i} className="w-[38%] shrink-0 sm:w-auto">
+            <div key={i}>
               <Skeleton className="arch aspect-[3/4]" />
               <Skeleton className="mx-auto mt-3 h-4 w-20" />
             </div>

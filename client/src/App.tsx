@@ -64,6 +64,7 @@ const router = createBrowserRouter([
       { path: 'contact', element: <Contact /> },
       { path: 'faq', element: <Faq /> },
       { path: 'shipping', element: <ShippingPolicy /> },
+      { path: 'refund-policy', element: <ReturnsPolicy /> },
       { path: 'returns', element: <ReturnsPolicy /> },
       { path: 'privacy', element: <PrivacyPolicy /> },
       { path: 'terms', element: <Terms /> },

@@ -59,7 +59,7 @@ export function CategoryArchCard({ category, index, interactive }: { category: C
     <Link
       ref={ref}
       to={`/shop/${category.slug}`}
-      className="cat-card group w-[38%] shrink-0 snap-start text-center sm:w-auto"
+      className="cat-card group text-center"
       style={{ '--i': index } as CSSProperties}
       onPointerEnter={onPointerEnter}
       onPointerMove={onPointerMove}

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, RotateCcw, ShieldCheck, Truck } from 'lucide-react';
+import { BadgeCheck, ChevronDown, ShieldCheck, Truck } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { PriceTag, ProductGrid, WishlistButton } from '../../components/store/ProductCard';
@@ -100,7 +100,7 @@ export default function ProductDetail() {
   const shippingCopy = useMemo(() => {
     if (!settings) return null;
     const s = settings.shipping;
-    return `Delivered in ${s.estimatedDays}. ${s.freeShippingThreshold > 0 ? `Free shipping on orders above ${formatPrice(s.freeShippingThreshold)}; ` : ''}otherwise ${formatPrice(s.flatFee)}.${settings.payments.cod ? ` Cash on Delivery available${settings.cod.fee ? ` (+${formatPrice(settings.cod.fee)})` : ''}.` : ''}`;
+    return `Delivered in ${s.estimatedDays}. ${s.freeShippingThreshold > 0 ? `Free shipping on orders above ${formatPrice(s.freeShippingThreshold)}; ` : ''}otherwise ${formatPrice(s.flatFee)}.`;
   }, [settings]);
 
   if (error instanceof ApiError && error.status === 404) return <NotFound />;
@@ -236,8 +236,7 @@ export default function ProductDetail() {
                   <ShieldCheck className="size-5 text-gold-500" aria-hidden /> Secure checkout
                 </li>
                 <li className="flex flex-col items-center gap-1.5">
-                  <RotateCcw className="size-5 text-gold-500" aria-hidden />
-                  {settings?.returns.windowDays ? `${settings.returns.windowDays}-day returns` : 'Quality checked'}
+                  <BadgeCheck className="size-5 text-gold-500" aria-hidden /> Quality checked
                 </li>
               </ul>
 
@@ -263,13 +262,11 @@ export default function ProductDetail() {
                     ))}
                   </dl>
                 </Accordion>
-                <Accordion title="Shipping & returns">
+                <Accordion title="Shipping">
                   <p>{shippingCopy}</p>
                   <p className="mt-2">
-                    {settings?.returns.windowDays
-                      ? `Returns accepted within ${settings.returns.windowDays} days of delivery for unused items in original packaging. `
-                      : ''}
-                    <Link to="/returns" className="text-rose-700 underline underline-offset-2">Read the full policy</Link>.
+                    We don’t accept returns or exchanges. If your piece arrives damaged or wrong, share an unboxing video within 48 hours and we’ll replace it.{' '}
+                    <Link to="/refund-policy" className="text-rose-700 underline underline-offset-2">Refund policy</Link>.
                   </p>
                 </Accordion>
               </div>

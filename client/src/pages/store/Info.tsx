@@ -116,16 +116,15 @@ export function Contact() {
 
 function faqs(s?: StoreSettings): { q: string; a: ReactNode }[] {
   const free = s?.shipping.freeShippingThreshold ? formatPrice(s.shipping.freeShippingThreshold) : null;
-  const days = s?.returns.windowDays ?? 0;
   return [
     { q: 'How long does delivery take?', a: `Most orders are delivered in ${s?.shipping.estimatedDays ?? 'a few business days'} after dispatch. You’ll get a tracking number as soon as your parcel ships.` },
     { q: 'How much is shipping?', a: free ? `Shipping is free on orders above ${free}. Below that, a flat ${formatPrice(s!.shipping.flatFee)} applies.` : `A flat ${formatPrice(s?.shipping.flatFee ?? 0)} shipping fee applies.` },
-    { q: 'Do you offer Cash on Delivery?', a: s?.cod.enabled ? `Yes${s.cod.fee ? `, with a ${formatPrice(s.cod.fee)} COD fee` : ''}${s.cod.maxOrderValue ? ` for orders up to ${formatPrice(s.cod.maxOrderValue)}` : ''}.` : 'Cash on Delivery is currently unavailable. You can pay securely online with UPI, cards or net banking.' },
+    { q: 'How can I pay?', a: 'All orders are prepaid. You can pay securely online with UPI, cards, net banking or wallets. We don’t offer Cash on Delivery.' },
     { q: 'Is online payment safe?', a: 'Payments are processed by Razorpay, a PCI-DSS compliant payment gateway. We never see or store your card or UPI details.' },
     { q: 'What is one-gram gold jewellery?', a: 'One-gram gold pieces are crafted from a base metal with a thin layer of real gold plating, giving the rich look of gold at a fraction of the price. Keep them away from water and perfume to keep the shine.' },
     { q: 'How do I track my order?', a: <>Use the secure tracking link in your confirmation email, or <Link to="/account/orders" className="text-rose-700 underline">sign in to your account</Link> to see all orders.</> },
     { q: 'Can I cancel my order?', a: 'You can cancel from your order page until we start processing it. After that, contact us and we’ll do our best to help.' },
-    { q: 'What is your return policy?', a: days ? <>Returns are accepted within {days} days of delivery for unused items in original packaging. See our <Link to="/returns" className="text-rose-700 underline">returns policy</Link>.</> : <>Please see our <Link to="/returns" className="text-rose-700 underline">returns policy</Link>.</> },
+    { q: 'Can I return or exchange an item?', a: <>We don’t accept returns or exchanges. If your piece arrives damaged or wrong, send us an unboxing video within 48 hours of delivery and we’ll replace it. See our <Link to="/refund-policy" className="text-rose-700 underline">refund policy</Link>.</> },
     { q: 'Are the jewellery pieces hypoallergenic?', a: 'Many of our earrings use nickel-free posts — check each product’s details. If you have sensitive skin, message us before ordering and we’ll recommend suitable pieces.' },
   ];
 }
@@ -165,7 +164,6 @@ export function ShippingPolicy() {
         <ul>
           {s?.shipping.freeShippingThreshold ? <li>Free shipping on orders of {formatPrice(s.shipping.freeShippingThreshold)} or more (after discounts).</li> : null}
           <li>A flat {formatPrice(s?.shipping.flatFee ?? 0)} applies to other orders.</li>
-          {s?.cod.enabled && <li>Cash on Delivery orders{s.cod.fee ? ` carry a ${formatPrice(s.cod.fee)} COD fee` : ' are accepted'}{s.cod.maxOrderValue ? ` up to ${formatPrice(s.cod.maxOrderValue)}` : ''}.</li>}
         </ul>
         <h2>Tracking</h2>
         <p>When your order ships we add the courier name and tracking number to your order page and email you. Tracking information shown on our site is updated by our team; for live scans use the courier’s tracking link.</p>
@@ -177,32 +175,20 @@ export function ShippingPolicy() {
 }
 
 export function ReturnsPolicy() {
-  const { data: s } = useStoreSettings();
-  const days = s?.returns.windowDays ?? 0;
   return (
-    <PageShell eyebrow="Policies" title="Returns & refunds">
+    <PageShell eyebrow="Policies" title="Refund & cancellation policy">
       <article className="prose-ap rounded-[24px] border border-line bg-paper p-6 shadow-soft sm:p-10">
-        {days > 0 ? (
-          <p>You can request a return within <strong>{days} days of delivery</strong> from your order page. Items must be unused, with tags and original packaging.</p>
-        ) : (
-          <p>Returns are reviewed case by case. Please contact us within 48 hours of delivery if anything is wrong with your order.</p>
-        )}
-        <h2>Non-returnable items</h2>
-        <ul>
-          <li>Earrings and nose pins (for hygiene reasons), unless they arrive damaged.</li>
-          <li>Personalised or customised gifts.</li>
-          <li>Items marked as final sale.</li>
-        </ul>
+        <p>Every piece is quality-checked and packed by hand before it leaves our studio. Because of the nature of jewellery and accessories, <strong>we do not accept returns or exchanges</strong>.</p>
         <h2>Damaged or wrong items</h2>
-        <p>If your order arrives damaged or incorrect, please share an unboxing video or photos with us within 48 hours and we’ll arrange a replacement or refund.</p>
+        <p>If your order arrives damaged or you received the wrong item, message us within <strong>48 hours of delivery</strong> with a clear, uncut unboxing video. Once verified, we’ll send a replacement. If a replacement isn’t available, we’ll refund the item.</p>
+        <h2>Cancellations</h2>
+        <p>You can cancel your order from the order page until we start processing it. Once an order is packed or shipped it can’t be cancelled.</p>
         <h2>Refunds</h2>
         <ul>
-          <li>Online payments are refunded to the original payment method through Razorpay once the return is received and inspected. Banks usually take 5–7 business days to reflect it.</li>
-          <li>Cash on Delivery orders are refunded by UPI or bank transfer to details you share with us.</li>
-          <li>Shipping and COD fees are non-refundable unless the item was damaged or incorrect.</li>
+          <li>Approved refunds go back to your original payment method through Razorpay. Banks usually take 5–7 business days to show it.</li>
+          <li>Shipping fees are refunded only when an order is cancelled before dispatch or an item arrives damaged or wrong.</li>
         </ul>
-        <h2>Cancellations</h2>
-        <p>You can cancel your order from the order page until we start processing it. Paid orders that are cancelled are refunded in full.</p>
+        <p>Questions? <Link to="/contact">Contact us</Link> — we’re happy to help.</p>
       </article>
     </PageShell>
   );
@@ -246,9 +232,11 @@ export function Terms() {
         <h2>Products</h2>
         <p>We photograph our pieces carefully, but colours may vary slightly between screens. Handmade and plated items can have small variations — this is part of their charm.</p>
         <h2>Prices and payment</h2>
-        <p>All prices are in Indian Rupees and include applicable taxes. Prices and availability are confirmed when you place your order. An order is confirmed only after successful payment verification (for online payments) or confirmation of a Cash on Delivery order.</p>
+        <p>All prices are in Indian Rupees and include applicable taxes. Prices and availability are confirmed when you place your order. All orders are prepaid, and an order is confirmed only after your online payment is verified. We don’t offer Cash on Delivery.</p>
         <h2>Order acceptance</h2>
         <p>We may cancel an order if an item becomes unavailable, if pricing was displayed in error, or if we suspect fraud. Any amount paid for a cancelled order is refunded in full.</p>
+        <h2>Returns</h2>
+        <p>We don’t accept returns or exchanges. Damaged or wrong items are replaced as described in our <Link to="/refund-policy">refund policy</Link>.</p>
         <h2>Coupons</h2>
         <p>Coupons are subject to their stated conditions (minimum order, validity, usage limits) and cannot be exchanged for cash.</p>
         <h2>Liability</h2>

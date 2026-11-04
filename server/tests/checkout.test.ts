@@ -15,7 +15,6 @@ afterAll(disconnectTestDb);
 beforeEach(async () => {
   await resetDb();
   // Defaults: flat ₹79 shipping, free above ₹999, COD fee ₹49 up to ₹5,000.
-  await StoreSettings.create({ _id: 'store' });
   invalidateSettingsCache();
 });
 
