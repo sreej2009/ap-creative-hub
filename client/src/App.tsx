@@ -7,7 +7,7 @@ import { ForgotPassword, Login, Register, ResetPassword } from './pages/store/Au
 import Cart from './pages/store/Cart';
 import Checkout from './pages/store/Checkout';
 import Home from './pages/store/Home';
-import { Contact, Faq, PrivacyPolicy, ReturnsPolicy, ShippingPolicy, Terms } from './pages/store/Info';
+import { About, Contact, Faq, PrivacyPolicy, ReturnsPolicy, ShippingPolicy, Terms } from './pages/store/Info';
 import NotFound from './pages/store/NotFound';
 import ProductDetail from './pages/store/ProductDetail';
 import Shop from './pages/store/Shop';
@@ -64,6 +64,7 @@ const router = createBrowserRouter([
       { path: 'contact', element: <Contact /> },
       { path: 'faq', element: <Faq /> },
       { path: 'shipping', element: <ShippingPolicy /> },
+      { path: 'about', element: <About /> },
       { path: 'refund-policy', element: <ReturnsPolicy /> },
       { path: 'returns', element: <ReturnsPolicy /> },
       { path: 'privacy', element: <PrivacyPolicy /> },

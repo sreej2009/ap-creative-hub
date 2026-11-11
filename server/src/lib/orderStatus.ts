@@ -36,7 +36,9 @@ export const ADMIN_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 };
 
 export const CANCELLABLE_BY_ADMIN: OrderStatus[] = ['pending_payment', 'placed', 'payment_confirmed', 'processing', 'packed'];
-export const CANCELLABLE_BY_CUSTOMER: OrderStatus[] = ['pending_payment', 'placed', 'payment_confirmed'];
+// Store policy: no cancellations once paid. Customers can only cancel orders with no money taken
+// (unpaid online orders, or COD orders if COD is ever enabled). Staff can still cancel paid orders.
+export const CANCELLABLE_BY_CUSTOMER: OrderStatus[] = ['pending_payment', 'placed'];
 export const SHIPMENT_EDITABLE: OrderStatus[] = ['processing', 'packed', 'shipped', 'out_for_delivery'];
 export const REFUNDABLE_STATUSES: OrderStatus[] = ['cancelled', 'returned'];
 

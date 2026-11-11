@@ -20,7 +20,7 @@ import {
   type DVariant,
 } from './data';
 
-const KEY = 'ap_demo_db_v2';
+const KEY = 'ap_demo_db_v3';
 const CUSTOMER_KEY = 'ap_demo_customer';
 const ADMIN_KEY = 'ap_demo_admin';
 
@@ -145,7 +145,7 @@ const ADMIN_TRANSITIONS: Record<string, string[]> = {
   return_requested: [], returned: [], cancelled: [], refunded: [],
 };
 const CANCELLABLE_BY_ADMIN = ['pending_payment', 'placed', 'payment_confirmed', 'processing', 'packed'];
-const CANCELLABLE_BY_CUSTOMER = ['pending_payment', 'placed', 'payment_confirmed'];
+const CANCELLABLE_BY_CUSTOMER = ['pending_payment', 'placed']; // no cancellations once paid
 const SHIPMENT_EDITABLE = ['processing', 'packed', 'shipped', 'out_for_delivery'];
 
 function activeCategoryIds(d: DemoDB) {

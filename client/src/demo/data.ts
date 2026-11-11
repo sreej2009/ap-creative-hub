@@ -312,7 +312,7 @@ export const DEFAULT_SETTINGS: DSettings = {
   shipping: { flatFee: 7900, freeShippingThreshold: 99900, estimatedDays: '4–7 business days' },
   cod: { enabled: false, fee: 4900, maxOrderValue: 500000 },
   returns: { windowDays: 0 },
-  contact: { email: '', phone: '', whatsapp: '', instagram: 'https://www.instagram.com/', address: '', hours: 'Mon–Sat, 10am–7pm IST' },
+  contact: { email: 'a.pcreativehub2025@gmail.com', phone: '+91 63836 66104', whatsapp: '916383666104', instagram: 'https://www.instagram.com/', address: 'Udumalpet, Tamil Nadu', hours: 'Mon–Sat, 10am–7pm IST' },
 };
 
 /* Sample customers (fictional) used by the sample orders. */

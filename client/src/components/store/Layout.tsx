@@ -5,6 +5,7 @@ import { useMe } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { useCategories, useStoreSettings } from '../../hooks/useStore';
 import { useWishlist } from '../../hooks/useWishlist';
+import { storeContact } from '../../lib/constants';
 import { cn } from '../../lib/format';
 import { Drawer, Modal } from '../ui/Dialog';
 import { InstagramIcon, Logo, Sparkle, WhatsAppIcon } from '../ui/Icons';
@@ -241,9 +242,10 @@ function Header() {
 }
 
 const FOOTER_LINKS = [
+  { to: '/about', label: 'About' },
   { to: '/shop', label: 'Shop' },
   { to: '/track', label: 'Track Order' },
-  { to: '/shipping', label: 'Shipping' },
+  { to: '/shipping', label: 'Shipping & Returns' },
   { to: '/refund-policy', label: 'Refund Policy' },
   { to: '/privacy', label: 'Privacy Policy' },
   { to: '/terms', label: 'Terms & Conditions' },
@@ -253,11 +255,11 @@ const FOOTER_LINKS = [
 
 function Footer() {
   const { data: settings } = useStoreSettings();
-  const c = settings?.contact;
+  const c = settings ? { ...settings.contact, ...storeContact(settings.contact) } : undefined;
   const social = 'inline-flex size-10 items-center justify-center rounded-full border border-line-strong text-ink-soft transition-colors hover:border-rose-600 hover:text-rose-700';
   return (
     <footer className="mt-24 border-t border-line bg-paper">
-      <div className="container-page flex flex-col items-center gap-6 py-10 text-center sm:py-12">
+      <div className="container-page flex flex-col items-center gap-6 pb-36 pt-10 text-center sm:py-12">
         <Link to="/" aria-label="A&P Creative Hub home">
           <Logo />
         </Link>
@@ -286,6 +288,17 @@ function Footer() {
             )}
           </div>
         )}
+        {c && (
+          <ul className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 text-[13px] text-ink-soft">
+            <li>
+              <a href={`mailto:${c.email}`} className="hover:text-rose-700">{c.email}</a>
+            </li>
+            <li>
+              <a href={`tel:${c.phone.replace(/\s/g, '')}`} className="hover:text-rose-700">{c.phone}</a>
+            </li>
+            <li>{c.address}</li>
+          </ul>
+        )}
         <p className="text-xs text-muted">© {new Date().getFullYear()} A&amp;P Creative Hub. All rights reserved.</p>
       </div>
     </footer>
@@ -308,9 +321,9 @@ function FloatingButtons() {
   };
   return (
     <div className="fixed bottom-5 right-5 z-30 flex flex-col items-center gap-3">
-      {data?.contact.whatsapp && (
+      {data && (
         <a
-          href={whatsappLink(data.contact.whatsapp)}
+          href={whatsappLink(storeContact(data.contact).whatsapp)}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat with us on WhatsApp"

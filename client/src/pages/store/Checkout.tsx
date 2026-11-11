@@ -344,8 +344,8 @@ export default function Checkout() {
             {stage === 'placing' ? 'Placing order…' : stage === 'paying' ? 'Waiting for payment…' : stage === 'verifying' ? 'Confirming payment…' : payLabel}
           </Button>
           <p className="text-center text-xs leading-relaxed text-muted">
-            By placing your order you agree to our <Link to="/terms" className="underline">terms</Link> and{' '}
-            <Link to="/refund-policy" className="underline">refund policy</Link>.
+            Please review your order carefully — we don’t accept cancellations, returns or exchanges once paid. By placing your order you agree to our{' '}
+            <Link to="/terms" className="underline">terms</Link> and <Link to="/refund-policy" className="underline">refund policy</Link>.
           </p>
         </aside>
       </form>

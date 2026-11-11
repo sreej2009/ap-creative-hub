@@ -265,8 +265,8 @@ export default function ProductDetail() {
                 <Accordion title="Shipping">
                   <p>{shippingCopy}</p>
                   <p className="mt-2">
-                    We don’t accept returns or exchanges. If your piece arrives damaged or wrong, share an unboxing video within 48 hours and we’ll replace it.{' '}
-                    <Link to="/refund-policy" className="text-rose-700 underline underline-offset-2">Refund policy</Link>.
+                    We don’t accept cancellations, returns or exchanges. For a damaged or defective product, an unboxing video is required for any claim.{' '}
+                    <Link to="/shipping" className="text-rose-700 underline underline-offset-2">Shipping &amp; returns policy</Link>.
                   </p>
                 </Accordion>
               </div>

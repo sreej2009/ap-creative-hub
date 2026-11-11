@@ -73,3 +73,27 @@ export function normalizePhone(v: string) {
   if (d.length === 11 && d.startsWith('0')) return d.slice(1);
   return d;
 }
+
+/**
+ * Business details shown on the About, policy and contact areas. Admin → Settings → Contact
+ * overrides these; they are the fallback so legal pages never show blank contact details.
+ */
+export const STORE_DETAILS = {
+  name: 'A&P Creative Hub',
+  email: 'a.pcreativehub2025@gmail.com',
+  phone: '+91 63836 66104',
+  whatsapp: '916383666104',
+  address: 'Udumalpet, Tamil Nadu',
+  /** Gateway named in the privacy policy and terms. */
+  paymentGateway: 'Cashfree',
+  policiesUpdated: '11 November 2026',
+} as const;
+
+export function storeContact(contact?: { email?: string; phone?: string; whatsapp?: string; address?: string }) {
+  return {
+    email: contact?.email || STORE_DETAILS.email,
+    phone: contact?.phone || STORE_DETAILS.phone,
+    whatsapp: contact?.whatsapp || STORE_DETAILS.whatsapp,
+    address: contact?.address || STORE_DETAILS.address,
+  };
+}

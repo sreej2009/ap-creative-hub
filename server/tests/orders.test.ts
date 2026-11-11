@@ -193,9 +193,12 @@ describe('cancellation rules', () => {
     expect(tooLate.status).toBe(409);
   });
 
-  it('flags a refund when a paid order is cancelled', async () => {
+  it('does not let customers cancel paid orders, and flags a refund when staff cancel one', async () => {
     const { c, orderNumber, token, id } = await placePaidOnline();
-    const res = await c.post(`/api/v1/track/${orderNumber}/cancel`, { reason: 'No longer needed', token });
+    const denied = await c.post(`/api/v1/track/${orderNumber}/cancel`, { reason: 'No longer needed', token });
+    expect(denied.status).toBe(409);
+    const { client } = await loginAs('admin', app);
+    const res = await client.post(`/api/v1/admin/orders/${id}/cancel`, { reason: 'Item unavailable' });
     expect(res.status).toBe(200);
     const order = await Order.findById(id).lean();
     expect(order).toMatchObject({ status: 'cancelled', payment: { status: 'paid' } });
@@ -211,7 +214,7 @@ describe('refunds', () => {
     const notYet = await client.post(`/api/v1/admin/orders/${id}/refunds`, { reason: 'Customer request' });
     expect(notYet.status).toBe(409); // not cancelled/returned yet
 
-    await c.post(`/api/v1/track/${orderNumber}/cancel`, { reason: 'Changed mind', token });
+    await client.post(`/api/v1/admin/orders/${id}/cancel`, { reason: 'Item unavailable' });
     const tooMuch = await client.post(`/api/v1/admin/orders/${id}/refunds`, { amount: 9_999_999, reason: 'Oops' });
     expect(tooMuch.status).toBe(409);
 
@@ -229,8 +232,8 @@ describe('refunds', () => {
   it('finalises pending refunds from the webhook exactly once', async () => {
     const { gateway, c, orderNumber, token, id } = await placePaidOnline();
     gateway.refundPayment.mockImplementationOnce(async (paymentId: string, input: { amount: number }) => ({ id: 'rfnd_pending1', payment_id: paymentId, amount: input.amount, status: 'pending' as const }));
-    await c.post(`/api/v1/track/${orderNumber}/cancel`, { reason: 'Changed mind', token });
     const { client } = await loginAs('admin', app);
+    await client.post(`/api/v1/admin/orders/${id}/cancel`, { reason: 'Item unavailable' });
     const res = await client.post(`/api/v1/admin/orders/${id}/refunds`, { reason: 'Cancelled' });
     expect(res.body.order.payment.status).toBe('refund_pending');
 
