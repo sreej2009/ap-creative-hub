@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdf4f6"/><stop offset="1" stop-color="#f4cfda"/></linearGradient>
+<radialGradient id="pearl" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#fbf7f1"/><stop offset="1" stop-color="#e6d9cc"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8cf9c"/><stop offset=".5" stop-color="#c39b57"/><stop offset="1" stop-color="#86642c"/></linearGradient>
+</defs>
+<rect width="800" height="1000" fill="url(#bg)"/>
+<path d="M150 900V430a250 250 0 0 1 500 0v470" fill="none" stroke="#c39b57" stroke-opacity=".45" stroke-width="2"/>
+<ellipse cx="400" cy="860" rx="230" ry="26" fill="#2a1f22" fill-opacity=".06"/>
+<g transform="translate(400 560)">
+      <path d="M-20 0C-120-110-250-90-250 0s130 110 230 0Z" fill="#a63a5f" fill-opacity=".9"/>
+      <path d="M20 0C120-110 250-90 250 0S120 110 20 0Z" fill="#a63a5f" fill-opacity=".9"/>
+      <path d="M-20 0c-60 60-90 160-130 230M20 0c60 60 90 160 130 230" stroke="#a63a5f" stroke-width="34" stroke-linecap="round" fill="none"/>
+      <rect x="-40" y="-46" width="80" height="92" rx="24" fill="url(#gold)"/>
+      <circle cx="-170" cy="0" r="16" fill="url(#pearl)"/><circle cx="-110" cy="0" r="16" fill="url(#pearl)"/><circle cx="110" cy="0" r="16" fill="url(#pearl)"/><circle cx="170" cy="0" r="16" fill="url(#pearl)"/>
+      <path d="M-230-20c40-50 110-60 170-30" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="10" stroke-linecap="round"/></g>
+<path transform="translate(170 230) scale(1.4)" fill="#c39b57" d="M0-12c.6 5.6 2.9 9.6 12 12-9.1 2.4-11.4 6.4-12 12-.6-5.6-2.9-9.6-12-12C-2.9-2.4-.6-6.4 0-12Z"/><path transform="translate(640 330) scale(0.9)" fill="#a63a5f" d="M0-12c.6 5.6 2.9 9.6 12 12-9.1 2.4-11.4 6.4-12 12-.6-5.6-2.9-9.6-12-12C-2.9-2.4-.6-6.4 0-12Z"/><path transform="translate(610 760) scale(0.7)" fill="#c39b57" d="M0-12c.6 5.6 2.9 9.6 12 12-9.1 2.4-11.4 6.4-12 12-.6-5.6-2.9-9.6-12-12C-2.9-2.4-.6-6.4 0-12Z"/>
+<text x="400" y="965" text-anchor="middle" font-family="Georgia,serif" font-size="22" letter-spacing="8" fill="#86642c" fill-opacity=".7">SAMPLE IMAGE</text>
+</svg>
