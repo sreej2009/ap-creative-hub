@@ -12,6 +12,7 @@ import { InstagramIcon, Sparkle, WhatsAppIcon } from '../../components/ui/Icons'
 import { useFinePointer, useInView, usePointerParallax, useReducedMotion } from '../../hooks/useMotion';
 import { useDocumentTitle, useStoreSettings } from '../../hooks/useStore';
 import { api } from '../../lib/api';
+import { storeContact } from '../../lib/constants';
 import { formatPrice } from '../../lib/format';
 import type { Category, HomeData, ProductCard } from '../../lib/types';
 
@@ -190,9 +191,10 @@ function CombosBand({ products, loading }: { products?: ProductCard[]; loading: 
 
 function SocialBand() {
   const { data } = useStoreSettings();
-  const c = data?.contact;
+  const c = data ? { ...data.contact, ...storeContact(data.contact) } : undefined;
   if (!c?.instagram && !c?.whatsapp) return null;
-  const handle = c.instagram ? c.instagram.replace(/\/$/, '').split('/').pop() : null;
+  // "https://www.instagram.com/name/?igsh=…" → "name"
+  const handle = c.instagram ? c.instagram.split(/[?#]/)[0].replace(/\/$/, '').split('/').pop() : null;
   return (
     <section className="container-page py-14">
       <div className="relative overflow-hidden rounded-[32px] bg-plum-900 px-6 py-14 text-center text-ivory sm:px-12">

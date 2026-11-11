@@ -83,17 +83,19 @@ export const STORE_DETAILS = {
   email: 'a.pcreativehub2025@gmail.com',
   phone: '+91 63836 66104',
   whatsapp: '916383666104',
+  instagram: 'https://www.instagram.com/a.p_creative_hub/',
   address: 'Udumalpet, Tamil Nadu',
   /** Gateway named in the privacy policy and terms. */
   paymentGateway: 'Cashfree',
   policiesUpdated: '11 November 2026',
 } as const;
 
-export function storeContact(contact?: { email?: string; phone?: string; whatsapp?: string; address?: string }) {
+export function storeContact(contact?: { email?: string; phone?: string; whatsapp?: string; instagram?: string; address?: string }) {
   return {
     email: contact?.email || STORE_DETAILS.email,
     phone: contact?.phone || STORE_DETAILS.phone,
     whatsapp: contact?.whatsapp || STORE_DETAILS.whatsapp,
+    instagram: contact?.instagram || STORE_DETAILS.instagram,
     address: contact?.address || STORE_DETAILS.address,
   };
 }

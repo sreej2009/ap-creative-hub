@@ -20,7 +20,7 @@ import {
   type DVariant,
 } from './data';
 
-const KEY = 'ap_demo_db_v3';
+const KEY = 'ap_demo_db_v4';
 const CUSTOMER_KEY = 'ap_demo_customer';
 const ADMIN_KEY = 'ap_demo_admin';
 

@@ -170,7 +170,7 @@ const StoreSettingsSchema = new Schema<IStoreSettings>(
       email: { type: String, default: 'a.pcreativehub2025@gmail.com', maxlength: 254 },
       phone: { type: String, default: '+91 63836 66104', maxlength: 20 },
       whatsapp: { type: String, default: '916383666104', maxlength: 20 },
-      instagram: { type: String, default: '', maxlength: 200 },
+      instagram: { type: String, default: 'https://www.instagram.com/a.p_creative_hub/', maxlength: 200 },
       address: { type: String, default: 'Udumalpet, Tamil Nadu', maxlength: 300 },
       hours: { type: String, default: 'Mon–Sat, 10am–7pm IST', maxlength: 100 },
     },
