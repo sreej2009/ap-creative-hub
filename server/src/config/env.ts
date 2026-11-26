@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
 /**
@@ -8,10 +9,16 @@ import { z } from 'zod';
  * Secrets are never logged or sent to the client.
  */
 
-// Load server/.env (if present) without overriding variables already set by the host.
-const envFile = path.resolve(process.cwd(), '.env');
-if (process.env.NODE_ENV !== 'test' && fs.existsSync(envFile)) {
-  process.loadEnvFile(envFile);
+// Load .env files (if present) without overriding variables already set by the host.
+// Checked: the working directory, server/, and the repo root, because hosts differ in
+// where they start Node and where they write the .env file (Hostinger: repo root).
+// The first file to set a variable wins, since loadEnvFile never overrides.
+if (process.env.NODE_ENV !== 'test') {
+  const serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+  const candidates = [process.cwd(), serverRoot, path.resolve(serverRoot, '..')].map((dir) => path.join(dir, '.env'));
+  for (const envFile of new Set(candidates)) {
+    if (fs.existsSync(envFile)) process.loadEnvFile(envFile);
+  }
 }
 
 const bool = (fallback: boolean) =>
