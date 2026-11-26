@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { pinoHttp } from 'pino-http';
 import { corsOrigins, env, isProd, isTest } from './config/env.js';
+import { DB_MEDIA_URL, mediaBucket } from './integrations/db-media.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { csrfProtection, rateLimits, rejectMongoOperators } from './middleware/security.js';
@@ -108,6 +109,33 @@ export function createApp() {
   app.use('/api/v1/admin', adminRoutes());
   app.use('/api/v1', storeRoutes());
   app.use('/api', notFoundHandler);
+
+  // Product images stored in the database when Cloudinary isn't configured (see integrations/db-media.ts).
+  // Each file is immutable (new upload = new id), so it can be cached for a year.
+  app.get('/media/:file', async (req, res, next) => {
+    const match = DB_MEDIA_URL.exec(`/media/${req.params.file}`);
+    if (!match) return next();
+    try {
+      const id = new mongoose.Types.ObjectId(match[1]);
+      const [file] = await mediaBucket().find({ _id: id }).limit(1).toArray();
+      if (!file) return res.status(404).end();
+      res.setHeader('Content-Type', String(file.metadata?.contentType ?? 'application/octet-stream'));
+      res.setHeader('Content-Length', String(file.length));
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      if (req.method === 'HEAD') return res.end();
+      mediaBucket()
+        .openDownloadStream(id)
+        .on('error', (err) => {
+          logger.warn({ err: err.message }, 'media stream failed');
+          if (!res.headersSent) res.status(500);
+          res.end();
+        })
+        .pipe(res);
+    } catch (err) {
+      next(err);
+    }
+  });
 
   if (env.SERVE_CLIENT) {
     // Relative to the server package (server/), so it works whatever directory the host starts Node from.

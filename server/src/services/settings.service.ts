@@ -61,7 +61,11 @@ export function integrationStatus() {
       : { configured: false, reason: rp.reason },
     cloudinary: cloudinaryConfigured()
       ? { configured: true }
-      : { configured: false, reason: 'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET are not set.' },
+      : {
+          configured: false,
+          reason:
+            'Not set up, so product images are stored in your database instead. That works, but keep photos small (under 500 KB each) and add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET when you can.',
+        },
     email: emailConfigured()
       ? { configured: true }
       : { configured: false, reason: 'SMTP_HOST and EMAIL_FROM are not set. Emails are logged as skipped.' },

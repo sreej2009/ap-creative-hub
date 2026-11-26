@@ -1,5 +1,6 @@
 import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 import { env } from '../config/env.js';
+import { DB_MEDIA_URL, DatabaseMediaStorage } from './db-media.js';
 
 export interface StoredImage {
   publicId: string;
@@ -62,19 +63,21 @@ class CloudinaryStorage implements MediaStorage {
 let override: MediaStorage | null | undefined;
 let cached: MediaStorage | null | undefined;
 
+/** Cloudinary when configured, otherwise images are stored in MongoDB (GridFS). */
 export function getMediaStorage(): MediaStorage | null {
   if (override !== undefined) return override;
   if (cached !== undefined) return cached;
-  return (cached = cloudinaryConfigured() ? new CloudinaryStorage() : null);
+  return (cached = cloudinaryConfigured() ? new CloudinaryStorage() : new DatabaseMediaStorage());
 }
 
 export function setMediaStorageForTests(storage: MediaStorage | null | undefined) {
   override = storage;
 }
 
-/** Image URLs we accept on products/categories: our Cloudinary account or bundled sample art. */
+/** Image URLs we accept on products/categories: our Cloudinary account, our database-stored images, or bundled sample art. */
 export function isAllowedImageUrl(url: string): boolean {
   if (/^\/samples\/[a-z0-9-]+\.(svg|png|jpe?g|webp)$/i.test(url)) return true;
+  if (DB_MEDIA_URL.test(url)) return true;
   try {
     const u = new URL(url);
     if (u.protocol !== 'https:' || u.hostname !== 'res.cloudinary.com') return false;

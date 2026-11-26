@@ -2,24 +2,14 @@ import type { Types } from 'mongoose';
 import { env } from '../config/env.js';
 import { getMediaStorage, isAllowedImageUrl } from '../integrations/cloudinary.js';
 import { AppError, badGateway, badRequest, serviceUnavailable } from '../lib/errors.js';
+import { ALLOWED_IMAGE_MIME, sniffImageType } from '../lib/image.js';
 import { logger } from '../lib/logger.js';
 import { Category } from '../models/Category.js';
 import { MediaAsset } from '../models/misc.js';
 import { Product } from '../models/Product.js';
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-export const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
-
-/** Detects the real file type from magic bytes — the client-supplied MIME type is not trusted. */
-export function sniffImageType(buf: Buffer): (typeof ALLOWED_IMAGE_MIME)[number] | null {
-  if (buf.length < 12) return null;
-  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
-  if (buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
-  if (buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return 'image/webp';
-  const brand = buf.toString('ascii', 4, 12);
-  if (brand === 'ftypavif' || brand === 'ftypavis') return 'image/avif';
-  return null;
-}
+export { ALLOWED_IMAGE_MIME, sniffImageType };
 
 export async function uploadImage(file: { buffer: Buffer; mimetype: string; size: number; originalname: string }, userId: Types.ObjectId) {
   const storage = getMediaStorage();

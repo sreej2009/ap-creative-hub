@@ -36,7 +36,7 @@ Set these on the host (never commit them). Start from `server/.env.example`.
 | `TRUST_PROXY` | `1` behind one proxy/load balancer (Render, Railway, Nginx), so rate limits see real client IPs |
 | `COOKIE_SECURE` | `true` (default in production) |
 | `COOKIE_SAMESITE` | `lax` for same-origin. Use `none` only if the client is on a different site (then also set `CORS_ORIGINS` and the client's `VITE_API_URL`). |
-| `CLOUDINARY_*` | production Cloudinary credentials |
+| `CLOUDINARY_*` | production Cloudinary credentials. If left unset, uploaded images are stored in MongoDB (GridFS bucket `media`) and served from `/media/<id>.<ext>`. That needs no setup but has no resizing, and the images count towards the database size (Atlas M0 = 512 MB), so keep photos small. Images uploaded before Cloudinary is added keep working afterwards. |
 | `RAZORPAY_*` | **test keys first** — see the go-live checklist |
 | `SMTP_*`, `EMAIL_FROM` | your email provider |
 | `RUN_JOBS` | `true` (safe on several instances; every job step is an atomic conditional update) |

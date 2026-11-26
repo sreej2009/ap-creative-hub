@@ -9,7 +9,7 @@ const ACCEPT = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 const MAX_BYTES = 5 * 1024 * 1024;
 
 /**
- * Uploads images to the server (which stores them in Cloudinary), then lets
+ * Uploads images to the server (which stores them in Cloudinary, or in the database if Cloudinary isn't set up), then lets
  * staff reorder, label and remove them. The first image is the cover.
  * Removed images are deleted from storage only after the product is saved.
  */
