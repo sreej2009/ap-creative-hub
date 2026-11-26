@@ -84,6 +84,8 @@ export function toCustomerOrder(order: LeanOrder, returnWindowDays: number, opts
       paidAt: order.payment.paidAt ?? null,
       amountPaid: order.payment.amountPaid,
       amountRefunded: order.payment.amountRefunded,
+      // Tracking links can be forwarded, so only enough of the UTR to recognise it.
+      upi: order.payment.upi?.utr ? { utrLast4: order.payment.upi.utr.slice(-4), submittedAt: order.payment.upi.submittedAt } : null,
     },
     customer: mask
       ? { name: order.customer.name, email: null, phone: maskPhone(order.customer.phone) }

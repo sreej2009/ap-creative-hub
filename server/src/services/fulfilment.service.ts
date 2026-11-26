@@ -42,7 +42,7 @@ export async function releaseOrderInventory(
 }
 
 function nextPaymentStatusOnCancel(current: PaymentStatus, bySystem: boolean): PaymentStatus {
-  if (current === 'awaiting_payment') return bySystem ? 'failed' : 'void';
+  if (current === 'awaiting_payment' || current === 'verification_pending') return bySystem ? 'failed' : 'void';
   if (current === 'cod_pending') return 'void';
   return current; // paid stays paid until a refund is processed
 }
@@ -60,6 +60,9 @@ export async function cancelOrder(
     if (!allowedFrom.includes(current.status)) {
       throw conflict(`An order that is "${STATUS_LABELS[current.status]}" can no longer be cancelled.`, 'INVALID_TRANSITION');
     }
+    if (actor.type === 'customer' && current.payment.status === 'verification_pending') {
+      throw conflict('We’re verifying your payment for this order. Please contact us if you need to cancel.', 'INVALID_TRANSITION');
+    }
     const now = new Date();
     const paymentStatus = nextPaymentStatusOnCancel(current.payment.status, actor.type === 'system');
     const needsRefund = current.payment.amountPaid - current.payment.amountRefunded > 0;
@@ -71,7 +74,11 @@ export async function cancelOrder(
           'payment.status': paymentStatus,
           reservationExpiresAt: null,
           cancellation: { reason, at: now, by: actor },
-          ...(needsRefund ? { attention: { reason: 'Refund required — order was cancelled after payment.', at: now } } : {}),
+          ...(needsRefund
+            ? { attention: { reason: 'Refund required — order was cancelled after payment.', at: now } }
+            : current.payment.status === 'verification_pending'
+              ? { attention: null } // the "verify UPI payment" flag no longer applies
+              : {}),
         },
         $push: { timeline: { status: 'cancelled', at: now, actor, note: reason } },
       },

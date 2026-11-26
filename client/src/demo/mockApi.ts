@@ -363,7 +363,7 @@ function quote(d: DemoDB, body: Body) {
   return {
     currency: 'INR' as const, lines, subtotal, discount, shipping, codFee, total: pre + codFee, itemCount, hasIssues: lines.some((l) => l.issue), coupon, couponCode,
     shippingInfo: { flatFee: s.shipping.flatFee, freeShippingThreshold: s.shipping.freeShippingThreshold, amountToFreeShipping: s.shipping.freeShippingThreshold > 0 ? Math.max(0, s.shipping.freeShippingThreshold - after) : 0 },
-    paymentMethods: { razorpay: { available: true }, cod },
+    paymentMethods: { razorpay: { available: true }, cod, upi: { available: false, reason: 'UPI payment is not part of the demo.' } },
   };
 }
 
@@ -684,7 +684,7 @@ route('GET', '/auth/admin/me', () => {
 });
 
 /* Storefront */
-const publicSettings = (d: DemoDB) => ({ ...d.settings, payments: { razorpay: { enabled: true, mode: 'test' }, cod: d.settings.cod.enabled } });
+const publicSettings = (d: DemoDB) => ({ ...d.settings, payments: { razorpay: { enabled: true, mode: 'test' }, cod: d.settings.cod.enabled, upi: { enabled: false, vpa: null, payeeName: null } } });
 route('GET', '/store/settings', ({ d }) => publicSettings(d));
 route('GET', '/home', ({ d }) => {
   const active = activeCategoryIds(d);

@@ -46,6 +46,8 @@ export async function publicSettings() {
     payments: {
       razorpay: gateway ? { enabled: true, mode: gateway.mode } : { enabled: false, mode: null },
       cod: s.cod.enabled,
+      // The UPI ID is shown to every paying customer anyway (it is what the QR encodes).
+      upi: s.upi?.enabled && s.upi.vpa ? { enabled: true, vpa: s.upi.vpa, payeeName: s.upi.payeeName } : { enabled: false, vpa: null, payeeName: null },
     },
   };
 }

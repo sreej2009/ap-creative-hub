@@ -21,6 +21,7 @@ interface SettingsResponse {
     hero: { eyebrow: string; title: string; subtitle: string; ctaLabel: string; ctaHref: string; imageUrl: string };
     shipping: { flatFee: number; freeShippingThreshold: number; estimatedDays: string };
     cod: { enabled: boolean; fee: number; maxOrderValue: number };
+    upi?: { enabled: boolean; vpa: string; payeeName: string };
     returns: { windowDays: number };
     contact: { email: string; phone: string; whatsapp: string; instagram: string; address: string; hours: string };
   };
@@ -40,6 +41,13 @@ const schema = z.object({
   }),
   shipping: z.object({ flatFee: money, freeShippingThreshold: money, estimatedDays: z.string().trim().max(60) }),
   cod: z.object({ enabled: z.boolean(), fee: money, maxOrderValue: money }),
+  upi: z
+    .object({
+      enabled: z.boolean(),
+      vpa: z.union([z.literal(''), z.string().trim().toLowerCase().regex(/^[a-z0-9._-]{2,256}@[a-z][a-z0-9.-]{1,63}$/, 'Enter a UPI ID such as yourname@okaxis')]),
+      payeeName: z.string().trim().max(60),
+    })
+    .refine((v) => !v.enabled || v.vpa, { path: ['vpa'], message: 'Add your UPI ID to turn on UPI payments' }),
   returns: z.object({ windowDays: z.coerce.number().int().min(0).max(60) }),
   contact: z.object({
     email: z.union([z.literal(''), z.string().email('Enter a valid email')]),
@@ -71,6 +79,7 @@ export default function Settings() {
       hero: s.hero,
       shipping: { flatFee: paiseToRupees(s.shipping.flatFee) || '0', freeShippingThreshold: paiseToRupees(s.shipping.freeShippingThreshold) || '0', estimatedDays: s.shipping.estimatedDays },
       cod: { enabled: s.cod.enabled, fee: paiseToRupees(s.cod.fee) || '0', maxOrderValue: paiseToRupees(s.cod.maxOrderValue) || '0' },
+      upi: { enabled: s.upi?.enabled ?? false, vpa: s.upi?.vpa ?? '', payeeName: s.upi?.payeeName ?? 'A&P Creative Hub' },
       returns: s.returns,
       contact: s.contact,
     });
@@ -126,6 +135,19 @@ export default function Settings() {
               <Input label="Button label" {...form.register('hero.ctaLabel')} error={e.hero?.ctaLabel?.message} />
               <Input label="Button link" {...form.register('hero.ctaHref')} error={e.hero?.ctaHref?.message} />
               <Input wrapperClassName="sm:col-span-2" label="Hero image URL" {...form.register('hero.imageUrl')} hint="A Cloudinary https:// URL or /samples/hero.svg" />
+            </div>
+          </Panel>
+          <Panel title="UPI payments (scan QR)">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Checkbox
+                  label="Accept UPI payments by QR code"
+                  description="Customers see a QR for the exact amount, pay from any UPI app and send you the transaction ID (UTR). You confirm each payment from the order page after checking your bank app."
+                  {...form.register('upi.enabled')}
+                />
+              </div>
+              <Input label="Your UPI ID" placeholder="yourname@okaxis" autoCapitalize="none" spellCheck={false} {...form.register('upi.vpa')} error={e.upi?.vpa?.message} hint="Payments go to this UPI ID. Double-check it." />
+              <Input label="Name shown in UPI apps" {...form.register('upi.payeeName')} error={e.upi?.payeeName?.message} hint="Usually your business or account name" />
             </div>
           </Panel>
           <Panel title="Shipping & COD">

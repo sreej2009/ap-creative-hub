@@ -61,6 +61,7 @@ Common error codes: `UNAUTHENTICATED` (401), `FORBIDDEN` (403), `CSRF_INVALID` (
 | POST | `/checkout/orders` | optional | `{ items, customer {name,email,phone}, shippingAddress, couponCode?, paymentMethod: "razorpay"\|"cod", whatsappOptIn, customerNote?, expectedTotal?, saveAddress?, idempotencyKey }`. Re-prices, reserves stock and claims the coupon atomically. Returns `{ order, trackingToken, payment }` where `payment` holds the Razorpay Checkout options (public key id only) for online orders. Replaying the same `idempotencyKey` returns the same order. Errors: `CART_CHANGED`, `PRICE_CHANGED` (with fresh `quote`), `OUT_OF_STOCK`, `COUPON_*`, `COD_UNAVAILABLE`, `PAYMENT_NOT_CONFIGURED`, `PAYMENT_INIT_FAILED`. |
 | POST | `/payments/razorpay/verify` | — | `{ orderNumber, razorpay_order_id, razorpay_payment_id, razorpay_signature }`. Verifies the HMAC signature **and** fetches the payment from Razorpay to confirm status/amount/currency before marking paid. `PAYMENT_PENDING` (409) if not yet captured. |
 | POST | `/payments/razorpay/retry` | owner or token | `{ orderNumber, token? }` → Checkout options again while the reservation is still valid. |
+| POST | `/payments/upi/submit` | owner or token | `{ orderNumber, token?, payerName, payerUpiId, utr }` → Manual UPI: records the customer's payment details (12-digit UTR) and moves the order to `verification_pending` for staff to check. Never marks the order paid by itself. |
 | POST | `/payments/razorpay/webhook` | HMAC | Raw body, header `X-Razorpay-Signature`; deduplicated by `X-Razorpay-Event-Id`. Handles `payment.captured`, `payment.authorized`, `order.paid`, `payment.failed`, `refund.processed`, `refund.failed`. |
 
 ## Order tracking (guest link or signed-in owner)
@@ -113,8 +114,10 @@ Every route checks a permission on the server. Roles: **admin** (all) and **staf
 | POST | `/admin/orders/:id/cancel` `{ reason }` | orders:cancel |
 | POST | `/admin/orders/:id/return` `{ approve, restock, note? }` | orders:write |
 | POST | `/admin/orders/:id/cod-collected` `{ reference? }` | orders:write |
+| POST | `/admin/orders/:id/upi/confirm` (UPI payment found in the bank app → paid, stock committed) | orders:write |
+| POST | `/admin/orders/:id/upi/reject` `{ reason }` (no matching payment → order cancelled, stock released) | orders:cancel |
 | POST | `/admin/orders/:id/refunds` `{ amount?, reason }` (Razorpay; cancelled/returned only) | orders:refund (admin) |
-| POST | `/admin/orders/:id/manual-refunds` `{ amount, reference }` (COD only, labelled manual) | orders:refund (admin) |
+| POST | `/admin/orders/:id/manual-refunds` `{ amount, reference }` (COD and UPI orders, labelled manual) | orders:refund (admin) |
 | GET | `/admin/customers` (`q, status, page`) | customers:read |
 | GET | `/admin/customers/:id` | customers:read |
 | PATCH | `/admin/customers/:id/status` `{ isActive }` | customers:write (admin) |

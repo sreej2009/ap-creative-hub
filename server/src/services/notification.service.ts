@@ -215,6 +215,39 @@ export const notifications = {
     );
   },
 
+  /** Tells the store a customer reported a UPI payment that needs checking. Fire-and-forget. */
+  upiPaymentSubmitted(order: Pick<IOrder, 'orderNumber' | 'pricing' | 'payment'> & { _id: Types.ObjectId }) {
+    const send = async () => {
+      const settings = await StoreSettings.findById('store').lean();
+      const to = settings?.contact.email;
+      const refs = { order: order._id };
+      if (!to) {
+        await record({ event: 'upi_payment_submitted', channel: 'email', recipient: 'store', status: 'skipped', reason: 'store_contact_email_not_set', ...refs });
+        return;
+      }
+      const u = order.payment.upi;
+      const amount = formatINR(order.pricing.total);
+      const link = `${env.APP_URL.replace(/\/$/, '')}/admin/orders/${order._id}`;
+      await deliverEmail(
+        'upi_payment_submitted',
+        {
+          to,
+          subject: `[Verify payment] ${order.orderNumber} · ${amount}`,
+          html: layout(
+            'UPI payment to verify',
+            `<p>Order <strong>${escapeHtml(order.orderNumber)}</strong> says it paid <strong>${amount}</strong>.</p>
+             <p>Payer: ${escapeHtml(u?.payerName ?? '')} (${escapeHtml(u?.payerUpiId ?? '')})<br/>UTR: <strong>${escapeHtml(u?.utr ?? '')}</strong></p>
+             <p>Check your bank or UPI app for this payment, then confirm or reject it in the admin panel.</p>`,
+            { label: 'Open order', url: link },
+          ),
+          text: `Verify UPI payment for ${order.orderNumber}: ${amount} from ${u?.payerName} (${u?.payerUpiId}), UTR ${u?.utr}. ${link}`,
+        },
+        refs,
+      );
+    };
+    track(send()).catch((err) => logger.error({ err }, 'UPI submission notification failed'));
+  },
+
   /** Wait for in-flight notifications (used by tests and graceful shutdown). */
   async flush() {
     await Promise.allSettled([...pending]);

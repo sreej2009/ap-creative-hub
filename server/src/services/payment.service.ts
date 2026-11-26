@@ -558,13 +558,13 @@ export async function refundOrder(orderId: string, input: { amount?: number; rea
 }
 
 /**
- * COD orders are refunded outside the system (cash, UPI or bank transfer).
+ * COD and manual-UPI orders are refunded outside the system (cash, UPI or bank transfer).
  * Staff record the refund with a reference; it is labelled as manual.
  */
 export async function recordManualRefund(orderId: string, input: { amount: number; reference: string }, actor: Actor) {
   const order = await Order.findById(orderId).lean();
   if (!order) throw notFound('Order');
-  if (order.payment.method !== 'cod') throw unprocessable('Online payments must be refunded through Razorpay.', 'REFUND_NOT_ALLOWED');
+  if (order.payment.method === 'razorpay') throw unprocessable('Online payments must be refunded through Razorpay.', 'REFUND_NOT_ALLOWED');
   await reserveRefundAmount(order._id, input.amount);
   const txn = await PaymentTransaction.create({
     order: order._id,

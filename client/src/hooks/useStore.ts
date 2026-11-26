@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import type { CartQuote, Category, StoreSettings } from '../lib/types';
+import type { CartQuote, Category, PaymentMethod, StoreSettings } from '../lib/types';
 import type { CartItem } from './useCart';
 
 export function useStoreSettings() {
@@ -23,7 +23,7 @@ export function useCategories() {
 /** Authoritative cart pricing from the server. */
 export function useCartQuote(
   items: CartItem[],
-  opts: { couponCode?: string; paymentMethod?: 'razorpay' | 'cod'; email?: string; phone?: string; enabled?: boolean } = {},
+  opts: { couponCode?: string; paymentMethod?: PaymentMethod; email?: string; phone?: string; enabled?: boolean } = {},
 ) {
   const payload = {
     items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity })),

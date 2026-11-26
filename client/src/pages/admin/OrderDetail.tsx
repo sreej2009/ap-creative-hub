@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Banknote, Flag, RotateCcw, Truck, Undo2, X } from 'lucide-react';
+import { Banknote, CircleCheck, Copy, Flag, QrCode, RotateCcw, Truck, Undo2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useParams } from 'react-router';
@@ -14,7 +14,7 @@ import { useToast } from '../../components/ui/Toast';
 import { useCan } from '../../hooks/useAuth';
 import { useDocumentTitle } from '../../hooks/useStore';
 import { api, errorMessage } from '../../lib/api';
-import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, paymentTone, statusTone } from '../../lib/constants';
+import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS, paymentTone, statusTone } from '../../lib/constants';
 import { formatDateTime, formatPrice, paiseToRupees, rupeesToPaise } from '../../lib/format';
 import type { AdminOrder } from './types';
 
@@ -45,7 +45,7 @@ export default function OrderDetail() {
   const { data: order, isLoading, isError, refetch } = useQuery({ queryKey: key, queryFn: () => api.get<AdminOrder>(`/admin/orders/${id}`) });
   useDocumentTitle(order ? `Order ${order.orderNumber}` : 'Order');
 
-  const [dialog, setDialog] = useState<null | 'cancel' | 'ship' | 'shipment' | 'return' | 'refund' | 'manualRefund' | 'cod'>(null);
+  const [dialog, setDialog] = useState<null | 'cancel' | 'ship' | 'shipment' | 'return' | 'refund' | 'manualRefund' | 'cod' | 'upiConfirm' | 'upiReject'>(null);
   const [nextStatus, setNextStatus] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [statusNote, setStatusNote] = useState('');
@@ -98,6 +98,12 @@ export default function OrderDetail() {
     onSuccess: onDone('Manual refund recorded'),
     onError: onFail,
   });
+  const upiConfirm = useMutation({ mutationFn: () => api.post<AdminOrder>(`/admin/orders/${id}/upi/confirm`), onSuccess: onDone('Payment confirmed — order is ready to process'), onError: onFail });
+  const upiReject = useMutation({
+    mutationFn: (reason: string) => api.post<AdminOrder>(`/admin/orders/${id}/upi/reject`, { reason }),
+    onSuccess: onDone('Payment rejected — order cancelled and stock released'),
+    onError: onFail,
+  });
   const cod = useMutation({ mutationFn: (reference: string) => api.post<AdminOrder>(`/admin/orders/${id}/cod-collected`, { reference: reference || undefined }), onSuccess: onDone('COD payment recorded'), onError: onFail });
 
   const shipForm = useForm<ShipmentForm>({ resolver: zodResolver(shipmentSchema) });
@@ -118,7 +124,7 @@ export default function OrderDetail() {
       <PageHeader
         back={{ to: '/admin/orders', label: 'Orders' }}
         title={order.orderNumber}
-        description={`Placed ${formatDateTime(order.createdAt)} · ${order.itemCount} items · ${order.payment.method === 'cod' ? 'Cash on Delivery' : 'Online payment'}`}
+        description={`Placed ${formatDateTime(order.createdAt)} · ${order.itemCount} items · ${PAYMENT_METHOD_LABELS[order.payment.method]}`}
         actions={
           <div className="flex items-center gap-2">
             <Badge tone={statusTone(order.status)} className="text-xs">
@@ -131,7 +137,15 @@ export default function OrderDetail() {
         }
       />
 
-      {order.attention && (
+      {a.canVerifyUpi && order.payment.upi && (
+        <UpiVerifyCard
+          order={order}
+          onConfirm={() => setDialog('upiConfirm')}
+          onReject={() => setDialog('upiReject')}
+          onCopy={(v) => navigator.clipboard?.writeText(v).then(() => toast('UTR copied'))}
+        />
+      )}
+      {order.attention && !a.canVerifyUpi && (
         <Alert
           tone="danger"
           className="mb-4"
@@ -147,7 +161,7 @@ export default function OrderDetail() {
       )}
       {order.status === 'pending_payment' && order.reservationExpiresAt && (
         <Alert tone="warning" className="mb-4">
-          Awaiting online payment. Stock is reserved until {formatDateTime(order.reservationExpiresAt)}; the order is cancelled automatically if payment isn’t verified by then.
+          {order.payment.method === 'upi' ? 'Waiting for the customer to pay by UPI and send the transaction ID.' : 'Awaiting online payment.'} Stock is reserved until {formatDateTime(order.reservationExpiresAt)}; the order is cancelled automatically if payment isn’t verified by then.
         </Alert>
       )}
 
@@ -193,7 +207,12 @@ export default function OrderDetail() {
             Cancel order
           </Button>
         )}
-        {!a.transitions.length && !a.canCancel && !a.canEditShipment && !a.canResolveReturn && !a.canRefund && !a.canRecordCodPayment && !a.canRecordManualRefund && (
+        {a.canVerifyUpi && (
+          <Button size="sm" icon={<CircleCheck className="size-4" />} onClick={() => setDialog('upiConfirm')}>
+            Confirm UPI payment
+          </Button>
+        )}
+        {!a.transitions.length && !a.canCancel && !a.canEditShipment && !a.canResolveReturn && !a.canRefund && !a.canRecordCodPayment && !a.canRecordManualRefund && !a.canVerifyUpi && (
           <p className="px-2 py-1.5 text-sm text-muted">No further actions for this order.</p>
         )}
       </div>
@@ -344,13 +363,25 @@ export default function OrderDetail() {
           </Panel>
           <Panel title="Payment">
             <dl>
-              <Row label="Method">{order.payment.method === 'cod' ? 'Cash on Delivery' : 'Razorpay'}</Row>
+              <Row label="Method">{order.payment.method === 'razorpay' ? 'Razorpay' : PAYMENT_METHOD_LABELS[order.payment.method]}</Row>
               <Row label="Status">
                 <Badge tone={paymentTone(order.payment.status)}>{PAYMENT_STATUS_LABELS[order.payment.status]}</Badge>
               </Row>
               <Row label="Paid">{formatPrice(order.payment.amountPaid)}</Row>
               {order.payment.amountRefunded > 0 && <Row label="Refunded">{formatPrice(order.payment.amountRefunded)}</Row>}
               {order.payment.paidAt && <Row label="Paid at">{formatDateTime(order.payment.paidAt)}</Row>}
+              {order.payment.upi && (
+                <>
+                  <Row label="Payer">
+                    {order.payment.upi.payerName}
+                    <span className="block font-mono text-xs text-muted">{order.payment.upi.payerUpiId}</span>
+                  </Row>
+                  <Row label="UTR">
+                    <span className="font-mono text-xs">{order.payment.upi.utr}</span>
+                  </Row>
+                  <Row label="Submitted">{formatDateTime(order.payment.upi.submittedAt)}</Row>
+                </>
+              )}
               {order.payment.razorpayPaymentId && (
                 <Row label="Payment ID">
                   <span className="font-mono text-xs">{order.payment.razorpayPaymentId}</span>
@@ -470,8 +501,81 @@ export default function OrderDetail() {
 
       <ManualRefundDialog open={dialog === 'manualRefund'} onClose={() => setDialog(null)} max={refundable} loading={manualRefund.isPending} onSubmit={(amount, reference) => manualRefund.mutate({ amount, reference })} />
 
+      <ConfirmDialog
+        open={dialog === 'upiConfirm'}
+        onClose={() => setDialog(null)}
+        onConfirm={() => upiConfirm.mutate()}
+        loading={upiConfirm.isPending}
+        title="Confirm this UPI payment?"
+        description={
+          <>
+            Only confirm after you’ve seen <strong>{formatPrice(order.pricing.total)}</strong> arrive in your bank or UPI app with UTR{' '}
+            <strong className="font-mono">{order.payment.upi?.utr}</strong>. The order is marked paid and the customer is notified.
+          </>
+        }
+        confirmLabel="Yes, payment received"
+      />
+      <ConfirmDialog
+        open={dialog === 'upiReject'}
+        onClose={() => setDialog(null)}
+        onConfirm={(reason) => upiReject.mutate(reason)}
+        loading={upiReject.isPending}
+        title="Reject this payment?"
+        description="Use this when no matching payment arrived. The order is cancelled, the stock is released and the customer sees your reason."
+        requireReason
+        reasonLabel="Reason (shown to the customer)"
+        confirmLabel="Reject and cancel order"
+        tone="danger"
+      />
+
       <CodDialog open={dialog === 'cod'} onClose={() => setDialog(null)} amount={order.pricing.total} loading={cod.isPending} onSubmit={(ref) => cod.mutate(ref)} />
     </>
+  );
+}
+
+function UpiVerifyCard({ order, onConfirm, onReject, onCopy }: { order: AdminOrder; onConfirm: () => void; onReject: () => void; onCopy: (v: string) => void }) {
+  const u = order.payment.upi!;
+  return (
+    <section className="mb-4 rounded-2xl border-2 border-gold-300 bg-paper p-5 shadow-soft">
+      <h2 className="flex items-center gap-2 text-xl">
+        <QrCode className="size-5 text-rose-600" aria-hidden /> UPI payment to verify
+      </h2>
+      <p className="mt-1 text-sm text-ink-soft">Open your bank or UPI app and look for this payment. Confirm only when the money has arrived.</p>
+      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-4">
+        <div>
+          <dt className="text-muted">Amount</dt>
+          <dd className="text-lg font-semibold">{formatPrice(order.pricing.total)}</dd>
+        </div>
+        <div>
+          <dt className="text-muted">UTR / transaction ID</dt>
+          <dd className="flex items-center gap-1 font-mono">
+            {u.utr}
+            <button type="button" aria-label="Copy UTR" onClick={() => onCopy(u.utr)} className="rounded-full p-1 text-muted hover:text-rose-700">
+              <Copy className="size-3.5" />
+            </button>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted">Paid by</dt>
+          <dd>
+            {u.payerName}
+            <span className="block font-mono text-xs text-muted">{u.payerUpiId}</span>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted">Submitted</dt>
+          <dd>{formatDateTime(u.submittedAt)}</dd>
+        </div>
+      </dl>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button size="sm" icon={<CircleCheck className="size-4" />} onClick={onConfirm}>
+          Payment received — confirm
+        </Button>
+        <Button size="sm" variant="ghost" className="text-danger hover:text-danger" icon={<X className="size-4" />} onClick={onReject}>
+          Not received — reject
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -565,7 +669,7 @@ function ManualRefundDialog({ open, onClose, onSubmit, max, loading }: { open: b
       open={open}
       onClose={onClose}
       title="Record a manual refund"
-      description="For COD orders refunded outside the system (UPI, bank transfer or cash). This only records the refund — make the payment first."
+      description="For COD and UPI orders refunded outside the system (UPI, bank transfer or cash). This only records the refund — make the payment first."
       size="sm"
       footer={
         <>

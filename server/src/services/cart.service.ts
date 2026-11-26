@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { getPaymentGateway } from '../integrations/razorpay.js';
+import type { PaymentMethod } from '../models/Order.js';
 import { AppError } from '../lib/errors.js';
 import { unitPriceFor } from '../lib/pricing.js';
 import { Product } from '../models/Product.js';
@@ -47,6 +48,7 @@ export interface CartQuote {
   paymentMethods: {
     razorpay: { available: boolean; reason?: string };
     cod: { available: boolean; reason?: string; fee: number };
+    upi: { available: boolean; reason?: string };
   };
 }
 
@@ -57,7 +59,7 @@ export interface CartQuote {
 export async function quoteCart(input: {
   items: { productId: string; variantId?: string | null; quantity: number }[];
   couponCode?: string;
-  paymentMethod?: 'razorpay' | 'cod';
+  paymentMethod?: PaymentMethod;
   email?: string;
   phone?: string;
 }): Promise<CartQuote> {
@@ -188,6 +190,7 @@ export async function quoteCart(input: {
     paymentMethods: {
       razorpay: gateway ? { available: true } : { available: false, reason: 'Online payment is not configured yet.' },
       cod,
+      upi: settings.upi?.enabled && settings.upi.vpa ? { available: true } : { available: false, reason: 'UPI payment is not set up yet.' },
     },
   };
 }

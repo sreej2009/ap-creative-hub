@@ -63,11 +63,13 @@ export function adminActions(order: OrderLike) {
     canRefund:
       order.payment.method === 'razorpay' && paid && REFUNDABLE_STATUSES.includes(order.status) && refundableAmount(order) > 0,
     canRecordManualRefund:
-      order.payment.method === 'cod' && paid && REFUNDABLE_STATUSES.includes(order.status) && refundableAmount(order) > 0,
+      (order.payment.method === 'cod' || order.payment.method === 'upi') && paid && REFUNDABLE_STATUSES.includes(order.status) && refundableAmount(order) > 0,
     canRecordCodPayment:
       order.payment.method === 'cod' &&
       order.payment.status === 'cod_pending' &&
       ['shipped', 'out_for_delivery', 'delivered'].includes(order.status),
+    canVerifyUpi:
+      order.payment.method === 'upi' && order.payment.status === 'verification_pending' && order.status === 'pending_payment',
   };
 }
 
@@ -78,13 +80,13 @@ export function customerActions(order: OrderLike & { reservationExpiresAt?: Date
     returnWindowDays > 0 &&
     !!deliveredAt &&
     Date.now() - new Date(deliveredAt).getTime() <= returnWindowDays * 86400_000;
+  const holdOpen =
+    order.status === 'pending_payment' && !!order.reservationExpiresAt && new Date(order.reservationExpiresAt) > new Date();
   return {
-    canCancel: CANCELLABLE_BY_CUSTOMER.includes(order.status),
+    // Once UPI payment details are submitted the customer says they have paid, so only staff can cancel.
+    canCancel: CANCELLABLE_BY_CUSTOMER.includes(order.status) && order.payment.status !== 'verification_pending',
     canRequestReturn: withinWindow,
-    canPay:
-      order.status === 'pending_payment' &&
-      order.payment.method === 'razorpay' &&
-      !!order.reservationExpiresAt &&
-      new Date(order.reservationExpiresAt) > new Date(),
+    canPay: holdOpen && order.payment.method === 'razorpay',
+    canSubmitUpi: holdOpen && order.payment.method === 'upi' && order.payment.status === 'awaiting_payment',
   };
 }

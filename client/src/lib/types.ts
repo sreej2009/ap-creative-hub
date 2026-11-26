@@ -122,7 +122,11 @@ export interface StoreSettings {
   cod: { enabled: boolean; fee: number; maxOrderValue: number };
   returns: { windowDays: number };
   contact: { email: string; phone: string; whatsapp: string; instagram: string; address: string; hours: string };
-  payments: { razorpay: { enabled: boolean; mode: 'test' | 'live' | null }; cod: boolean };
+  payments: {
+    razorpay: { enabled: boolean; mode: 'test' | 'live' | null };
+    cod: boolean;
+    upi: { enabled: boolean; vpa: string | null; payeeName: string | null };
+  };
 }
 
 export interface HomeData {
@@ -167,7 +171,11 @@ export interface CartQuote {
   hasIssues: boolean;
   coupon: { code: string; valid: true; discount: number; description: string } | { code: string; valid: false; message: string; reason: string } | null;
   shippingInfo: { flatFee: number; freeShippingThreshold: number; amountToFreeShipping: number };
-  paymentMethods: { razorpay: { available: boolean; reason?: string }; cod: { available: boolean; reason?: string; fee: number } };
+  paymentMethods: {
+    razorpay: { available: boolean; reason?: string };
+    cod: { available: boolean; reason?: string; fee: number };
+    upi: { available: boolean; reason?: string };
+  };
 }
 
 export type OrderStatus =
@@ -184,7 +192,9 @@ export type OrderStatus =
   | 'returned'
   | 'refunded';
 
-export type PaymentStatus = 'awaiting_payment' | 'cod_pending' | 'paid' | 'failed' | 'void' | 'refund_pending' | 'partially_refunded' | 'refunded';
+export type PaymentMethod = 'razorpay' | 'cod' | 'upi';
+
+export type PaymentStatus = 'awaiting_payment' | 'verification_pending' | 'cod_pending' | 'paid' | 'failed' | 'void' | 'refund_pending' | 'partially_refunded' | 'refunded';
 
 export interface OrderItem {
   productId: string;
@@ -224,7 +234,14 @@ export interface CustomerOrder {
   items: OrderItem[];
   pricing: Pricing;
   coupon: { code: string; discount: number } | null;
-  payment: { method: 'razorpay' | 'cod'; status: PaymentStatus; paidAt: string | null; amountPaid: number; amountRefunded: number };
+  payment: {
+    method: PaymentMethod;
+    status: PaymentStatus;
+    paidAt: string | null;
+    amountPaid: number;
+    amountRefunded: number;
+    upi?: { utrLast4: string; submittedAt: string } | null;
+  };
   customer: { name: string; email: string | null; phone: string };
   shippingAddress: Partial<Address>;
   timeline: { status: OrderStatus; label: string; at: string; by: string; note: string | null }[];
@@ -233,7 +250,7 @@ export interface CustomerOrder {
   cancellation: { reason: string; at: string } | null;
   returnRequest: { reason: string; requestedAt: string; resolvedAt?: string | null; resolution?: string | null } | null;
   reservationExpiresAt: string | null;
-  actions: { canCancel: boolean; canRequestReturn: boolean; canPay: boolean };
+  actions: { canCancel: boolean; canRequestReturn: boolean; canPay: boolean; canSubmitUpi?: boolean };
 }
 
 export interface RazorpayCheckout {

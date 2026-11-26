@@ -1,4 +1,4 @@
-import type { ImageRef, OrderStatus, PageMeta, PaymentStatus, Pricing, Shipment } from '../../lib/types';
+import type { ImageRef, OrderStatus, PageMeta, PaymentMethod, PaymentStatus, Pricing, Shipment } from '../../lib/types';
 
 export interface AdminOrderSummary {
   id: string;
@@ -10,7 +10,7 @@ export interface AdminOrderSummary {
   total: number;
   status: OrderStatus;
   statusLabel: string;
-  payment: { method: 'razorpay' | 'cod'; status: PaymentStatus };
+  payment: { method: PaymentMethod; status: PaymentStatus };
   attention: { reason: string; at: string } | null;
   city: string;
 }
@@ -28,7 +28,7 @@ export interface AdminOrder extends AdminOrderSummary {
   pricing: Pricing;
   coupon: { code: string; discount: number; released: boolean } | null;
   payment: {
-    method: 'razorpay' | 'cod';
+    method: PaymentMethod;
     status: PaymentStatus;
     razorpayOrderId?: string | null;
     razorpayPaymentId?: string | null;
@@ -36,6 +36,7 @@ export interface AdminOrder extends AdminOrderSummary {
     amountPaid: number;
     amountRefunded: number;
     refundReserved: number;
+    upi?: { payerName: string; payerUpiId: string; utr: string; submittedAt: string } | null;
   };
   inventoryState: 'reserved' | 'committed' | 'released';
   reservationExpiresAt: string | null;
@@ -55,6 +56,7 @@ export interface AdminOrder extends AdminOrderSummary {
     canRefund: boolean;
     canRecordManualRefund: boolean;
     canRecordCodPayment: boolean;
+    canVerifyUpi: boolean;
   };
   transactions: {
     id: string;

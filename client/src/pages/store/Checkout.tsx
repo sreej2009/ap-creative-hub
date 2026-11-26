@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Banknote, CreditCard, Lock, ShoppingBag } from 'lucide-react';
+import { Banknote, CreditCard, Lock, QrCode, ShoppingBag } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
@@ -16,7 +16,7 @@ import { ApiError, api, errorMessage } from '../../lib/api';
 import { cn, formatPrice } from '../../lib/format';
 import { openRazorpay } from '../../lib/razorpay';
 import { rememberOrderToken } from '../../lib/storage';
-import type { Address, PlacedOrder } from '../../lib/types';
+import type { Address, PaymentMethod, PlacedOrder } from '../../lib/types';
 import { CouponBox, SummaryRows, useCouponCode } from './Cart';
 
 const schema = z
@@ -26,7 +26,7 @@ const schema = z
     phone: phoneSchema,
     addressId: z.string(),
     address: z.unknown(),
-    paymentMethod: z.enum(['razorpay', 'cod'], { error: 'Choose a payment method' }),
+    paymentMethod: z.enum(['razorpay', 'upi', 'cod'], { error: 'Choose a payment method' }),
     whatsappOptIn: z.boolean(),
     saveAddress: z.boolean(),
     note: z.string().trim().max(500).optional(),
@@ -37,6 +37,9 @@ const schema = z
     if (!r.success) for (const issue of r.error.issues) ctx.addIssue({ ...issue, path: ['address', ...issue.path] });
   });
 type FormValues = z.input<typeof schema>;
+
+/** Preferred first: automatic online payment, then UPI by QR, then cash on delivery. */
+const METHOD_ORDER: PaymentMethod[] = ['razorpay', 'upi', 'cod'];
 
 const newKey = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}-checkout`);
 
@@ -97,12 +100,12 @@ export default function Checkout() {
 
   // Default to whichever payment method is actually available.
   useEffect(() => {
-    if (!q) return;
-    if (paymentMethod === 'razorpay' && !q.paymentMethods.razorpay.available && q.paymentMethods.cod.available) setValue('paymentMethod', 'cod');
-    if (paymentMethod === 'cod' && !q.paymentMethods.cod.available && q.paymentMethods.razorpay.available) setValue('paymentMethod', 'razorpay');
+    if (!q || q.paymentMethods[paymentMethod]?.available) return;
+    const first = METHOD_ORDER.find((m) => q.paymentMethods[m]?.available);
+    if (first) setValue('paymentMethod', first);
   }, [q, paymentMethod, setValue]);
 
-  const noMethods = q && !q.paymentMethods.razorpay.available && !q.paymentMethods.cod.available;
+  const noMethods = q && !METHOD_ORDER.some((m) => q.paymentMethods[m]?.available);
   const busy = stage !== 'idle';
 
   const onSubmit = handleSubmit(async (raw) => {
@@ -187,7 +190,8 @@ export default function Checkout() {
     );
   }
 
-  const payLabel = paymentMethod === 'cod' ? 'Place order' : `Pay ${q ? formatPrice(q.total) : ''}`;
+  const payLabel =
+    paymentMethod === 'cod' ? 'Place order' : paymentMethod === 'upi' ? `Continue to pay ${q ? formatPrice(q.total) : ''}` : `Pay ${q ? formatPrice(q.total) : ''}`;
 
   return (
     <div className="container-page pb-10 pt-8">
@@ -263,6 +267,17 @@ export default function Checkout() {
               </Alert>
             )}
             <div className="grid gap-3">
+              {q?.paymentMethods.upi?.available && (
+                <PaymentOption
+                  value="upi"
+                  checked={paymentMethod === 'upi'}
+                  register={register}
+                  icon={<QrCode className="size-5" />}
+                  title="Pay by UPI (scan QR)"
+                  description="Google Pay, PhonePe, Paytm or any UPI app. You’ll get a QR for the exact amount on the next screen; we confirm your order once we receive the payment."
+                />
+              )}
+              {(q?.paymentMethods.razorpay.available || !q) && (
               <PaymentOption
                 value="razorpay"
                 checked={paymentMethod === 'razorpay'}
@@ -276,6 +291,7 @@ export default function Checkout() {
                     : q?.paymentMethods.razorpay.reason ?? 'Checking availability…'
                 }
               />
+              )}
               {q?.paymentMethods.cod.available && (
               <PaymentOption
                 value="cod"
@@ -362,7 +378,7 @@ function PaymentOption({
   title,
   description,
 }: {
-  value: 'razorpay' | 'cod';
+  value: PaymentMethod;
   checked: boolean;
   disabled?: boolean;
   register: ReturnType<typeof useForm<FormValues>>['register'];

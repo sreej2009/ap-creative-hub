@@ -53,7 +53,13 @@ export default function Track() {
     queryKey,
     queryFn: () => api.get<{ order: CustomerOrder }>(`/track/${encodeURIComponent(orderNumber)}`, { token }).then((r) => r.order),
     // Poll briefly while a payment is being confirmed.
-    refetchInterval: (q) => (q.state.data?.status === 'pending_payment' && paymentNotice === 'pending' ? 5000 : false),
+    // While a UPI payment is being checked by hand, look for the confirmation every minute.
+    refetchInterval: (q) => {
+      const o = q.state.data;
+      if (o?.status !== 'pending_payment') return false;
+      if (paymentNotice === 'pending') return 5000;
+      return o.payment.status === 'verification_pending' ? 60_000 : false;
+    },
   });
 
   if (isLoading) return <PageLoader />;

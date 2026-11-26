@@ -88,9 +88,11 @@ export async function getDashboard(days: number) {
 
   const byStatus = Object.fromEntries(statusCounts.map((s) => [s._id, s.count])) as Record<string, number>;
   const sum = (...keys: string[]) => keys.reduce((s, k) => s + (byStatus[k] ?? 0), 0);
-  const online = paidAgg.find((p) => p._id === 'razorpay');
+  // "Online" covers Razorpay and manually verified UPI (QR) payments.
+  const onlineRows = paidAgg.filter((p) => p._id === 'razorpay' || p._id === 'upi');
+  const online = { total: onlineRows.reduce((s, p) => s + p.total, 0), count: onlineRows.reduce((s, p) => s + p.count, 0) };
   const cod = paidAgg.find((p) => p._id === 'cod');
-  const gross = (online?.total ?? 0) + (cod?.total ?? 0);
+  const gross = online.total + (cod?.total ?? 0);
   const refunds = refundAgg[0]?.total ?? 0;
 
   const salesMap = new Map(dailySales.map((d) => [d._id, d.total]));

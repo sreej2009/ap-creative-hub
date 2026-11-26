@@ -90,6 +90,7 @@ export default function Orders() {
         <Select label="Method" value={filters.paymentMethod ?? ''} onChange={(e) => set({ paymentMethod: e.target.value || undefined })}>
           <option value="">Any method</option>
           <option value="razorpay">Online (Razorpay)</option>
+          <option value="upi">UPI (QR)</option>
           <option value="cod">Cash on Delivery</option>
         </Select>
         <Input label="From" type="date" value={filters.from ?? ''} onChange={(e) => set({ from: e.target.value || undefined })} />
@@ -147,7 +148,7 @@ export default function Orders() {
                     </td>
                     <td>
                       <Badge tone={paymentTone(o.payment.status)}>{PAYMENT_STATUS_LABELS[o.payment.status]}</Badge>
-                      <p className="mt-0.5 text-xs text-muted">{o.payment.method === 'cod' ? 'COD' : 'Online'}</p>
+                      <p className="mt-0.5 text-xs text-muted">{o.payment.method === 'cod' ? 'COD' : o.payment.method === 'upi' ? 'UPI' : 'Online'}</p>
                     </td>
                     <td className="text-right font-medium tabular-nums">{formatPrice(o.total)}</td>
                   </tr>

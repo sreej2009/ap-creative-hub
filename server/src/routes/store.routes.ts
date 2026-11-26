@@ -19,6 +19,7 @@ import {
   ProfileSchema,
   RetryPaymentSchema,
   ReturnRequestSchema,
+  UpiSubmitSchema,
   VerifyPaymentSchema,
   WishlistSchema,
 } from '../schemas/index.js';
@@ -30,6 +31,7 @@ import { cancelOrder, requestReturn } from '../services/fulfilment.service.js';
 import { notifications } from '../services/notification.service.js';
 import { findAccessibleOrder, toCustomerOrder } from '../services/order-helpers.js';
 import { retryPayment, verifyCheckoutPayment } from '../services/payment.service.js';
+import { submitUpiPayment } from '../services/upi.service.js';
 import { getPublicProduct, homeSections, listPublicProducts, relatedProducts, toProductCard } from '../services/product.service.js';
 import { getSettings, publicSettings } from '../services/settings.service.js';
 import { activeCategoryIds } from '../services/category.service.js';
@@ -123,6 +125,18 @@ export function storeRoutes() {
     const order = await findAccessibleOrder(orderNumber.toUpperCase(), { userId: req.customer?._id, token });
     if (!order) throw notFound('Order');
     res.json({ payment: await retryPayment(order) });
+  });
+
+  /** Manual UPI: the customer reports the payment they made by scanning the QR. Staff verify it. */
+  r.post('/payments/upi/submit', checkoutLimit, loadCustomer, async (req, res) => {
+    const { orderNumber, token, ...details } = parseBody(UpiSubmitSchema, req);
+    const order = await findAccessibleOrder(orderNumber.toUpperCase(), { userId: req.customer?._id, token });
+    if (!order) throw notFound('Order');
+    await submitUpiPayment(order, details, customerActor(req));
+    const fresh = await findAccessibleOrder(order.orderNumber, { userId: req.customer?._id, token });
+    const settings = await getSettings();
+    const isOwner = !!req.customer && !!fresh!.user && fresh!.user.equals(req.customer._id);
+    res.json({ order: toCustomerOrder(fresh!, settings.returns.windowDays, { maskContact: !isOwner }) });
   });
 
   /* ------------------------- Tracking (guest + owner) ------------------ */

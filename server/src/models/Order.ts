@@ -18,6 +18,7 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const PAYMENT_STATUSES = [
   'awaiting_payment', // online order created, payment not yet verified
+  'verification_pending', // manual UPI: customer submitted payment details, staff must check the bank app
   'cod_pending', // cash on delivery, not yet collected
   'paid',
   'failed', // online order expired/cancelled without a successful payment
@@ -28,7 +29,7 @@ export const PAYMENT_STATUSES = [
 ] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-export const PAYMENT_METHODS = ['razorpay', 'cod'] as const;
+export const PAYMENT_METHODS = ['razorpay', 'cod', 'upi'] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export type ActorType = 'system' | 'customer' | 'admin' | 'staff';
@@ -96,6 +97,8 @@ export interface IOrder {
     amountRefunded: number;
     /** Refund amount currently in flight with the provider; prevents concurrent over-refunds. */
     refundReserved: number;
+    /** Manual UPI (scan QR): what the customer reported after paying. Checked by staff before confirming. */
+    upi?: { payerName: string; payerUpiId: string; utr: string; submittedAt: Date } | null;
   };
   status: OrderStatus;
   inventoryState: 'reserved' | 'committed' | 'released';
@@ -185,7 +188,7 @@ const OrderSchema = new Schema<IOrder>(
       default: null,
     },
     payment: {
-      method: { type: String, enum: ['razorpay', 'cod'], required: true },
+      method: { type: String, enum: PAYMENT_METHODS, required: true },
       status: { type: String, enum: PAYMENT_STATUSES, required: true },
       razorpayOrderId: { type: String, default: null },
       razorpayPaymentId: { type: String, default: null },
@@ -193,6 +196,18 @@ const OrderSchema = new Schema<IOrder>(
       amountPaid: { type: Number, default: 0 },
       amountRefunded: { type: Number, default: 0 },
       refundReserved: { type: Number, default: 0 },
+      upi: {
+        type: new Schema(
+          {
+            payerName: { type: String, maxlength: 100 },
+            payerUpiId: { type: String, maxlength: 100 },
+            utr: { type: String, maxlength: 30 },
+            submittedAt: Date,
+          },
+          { _id: false },
+        ),
+        default: null,
+      },
     },
     status: { type: String, enum: ORDER_STATUSES, required: true },
     inventoryState: { type: String, enum: ['reserved', 'committed', 'released'], required: true },
@@ -245,6 +260,7 @@ OrderSchema.index({ user: 1, createdAt: -1 });
 OrderSchema.index({ status: 1, createdAt: -1 });
 OrderSchema.index({ 'payment.status': 1, createdAt: -1 });
 OrderSchema.index({ 'payment.razorpayOrderId': 1 }, { sparse: true });
+OrderSchema.index({ 'payment.upi.utr': 1 }, { partialFilterExpression: { 'payment.upi.utr': { $type: 'string' } } });
 OrderSchema.index({ status: 1, reservationExpiresAt: 1 });
 OrderSchema.index({ 'customer.email': 1 });
 OrderSchema.index({ 'payment.paidAt': 1 });

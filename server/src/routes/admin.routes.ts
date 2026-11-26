@@ -26,6 +26,7 @@ import {
   ShipmentSchema,
   StatusUpdateSchema,
   StockAdjustSchema,
+  UpiRejectSchema,
 } from '../schemas/index.js';
 import { objectId, pageQuery, searchText } from '../schemas/common.js';
 import * as adminQuery from '../services/admin-query.service.js';
@@ -37,6 +38,7 @@ import * as inventory from '../services/inventory.service.js';
 import { MAX_IMAGE_BYTES, uploadImage } from '../services/media.service.js';
 import { refundOrder, recordManualRefund } from '../services/payment.service.js';
 import * as products from '../services/product.service.js';
+import { confirmUpiPayment, rejectUpiPayment } from '../services/upi.service.js';
 import { getSettings, integrationStatus, updateSettings } from '../services/settings.service.js';
 
 const IdParam = z.object({ id: objectId });
@@ -197,6 +199,20 @@ export function adminRoutes() {
   r.post('/orders/:id/cod-collected', requireAdmin('orders:write'), async (req, res) => {
     const { id } = parseParams(IdParam, req);
     await fulfilment.recordCodCollected(id, adminActor(req), parseBody(CodCollectedSchema, req).reference);
+    res.json(await orderResponse(id));
+  });
+
+  /** Manual UPI: staff found the payment in their bank / UPI app. */
+  r.post('/orders/:id/upi/confirm', requireAdmin('orders:write'), async (req, res) => {
+    const { id } = parseParams(IdParam, req);
+    await confirmUpiPayment(id, adminActor(req));
+    res.json(await orderResponse(id));
+  });
+
+  /** Manual UPI: no matching payment was found. Cancels the order and releases the stock. */
+  r.post('/orders/:id/upi/reject', requireAdmin('orders:cancel'), async (req, res) => {
+    const { id } = parseParams(IdParam, req);
+    await rejectUpiPayment(id, parseBody(UpiRejectSchema, req).reason, adminActor(req));
     res.json(await orderResponse(id));
   });
 

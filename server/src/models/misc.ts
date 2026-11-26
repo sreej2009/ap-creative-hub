@@ -13,6 +13,7 @@ export const NOTIFICATION_EVENTS = [
   'refund',
   'password_reset',
   'contact_message',
+  'upi_payment_submitted',
 ] as const;
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
 
@@ -133,6 +134,8 @@ export interface IStoreSettings {
   };
   shipping: { flatFee: number; freeShippingThreshold: number; estimatedDays: string };
   cod: { enabled: boolean; fee: number; maxOrderValue: number };
+  /** Manual UPI: customers scan a QR for this UPI ID, then staff verify the payment by hand. */
+  upi: { enabled: boolean; vpa: string; payeeName: string };
   returns: { windowDays: number };
   contact: { email: string; phone: string; whatsapp: string; instagram: string; address: string; hours: string };
   updatedBy?: Types.ObjectId;
@@ -164,6 +167,11 @@ const StoreSettingsSchema = new Schema<IStoreSettings>(
       enabled: { type: Boolean, default: false },
       fee: { type: Number, default: 4900 },
       maxOrderValue: { type: Number, default: 500000 },
+    },
+    upi: {
+      enabled: { type: Boolean, default: false },
+      vpa: { type: String, default: '', maxlength: 100 },
+      payeeName: { type: String, default: 'A&P Creative Hub', maxlength: 60 },
     },
     returns: { windowDays: { type: Number, default: 0 } },
     contact: {

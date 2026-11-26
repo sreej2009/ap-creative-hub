@@ -15,7 +15,10 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server';
 
 const dbPath = path.resolve(process.cwd(), '.local-db');
 fs.mkdirSync(dbPath, { recursive: true });
-const port = Number(process.env.LOCAL_DB_PORT ?? 27017);
+// Port: LOCAL_DB_PORT, else the port in server/.env's local MONGODB_URI, else 27017.
+if (fs.existsSync('.env')) process.loadEnvFile('.env');
+const uriPort = process.env.MONGODB_URI?.match(/^mongodb:\/\/(?:127\.0\.0\.1|localhost):(\d+)\//)?.[1];
+const port = Number(process.env.LOCAL_DB_PORT ?? uriPort ?? 27017);
 
 const replSet = await MongoMemoryReplSet.create({
   replSet: { name: 'local', count: 1, storageEngine: 'wiredTiger' },

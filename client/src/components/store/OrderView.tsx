@@ -3,7 +3,7 @@ import { CircleCheck, Copy, ExternalLink, Package, Truck } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api, errorMessage } from '../../lib/api';
-import { PAYMENT_STATUS_LABELS, statusTone } from '../../lib/constants';
+import { PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS, statusTone } from '../../lib/constants';
 import { cn, formatDate, formatDateTime, formatPrice } from '../../lib/format';
 import { openRazorpay } from '../../lib/razorpay';
 import type { CustomerOrder, OrderStatus, RazorpayCheckout } from '../../lib/types';
@@ -12,6 +12,7 @@ import { ConfirmDialog } from '../ui/Dialog';
 import { Alert, Badge } from '../ui/Feedback';
 import { Sparkle } from '../ui/Icons';
 import { useToast } from '../ui/Toast';
+import { UpiPayPanel } from './UpiPayPanel';
 
 const PROGRESS: OrderStatus[] = ['placed', 'processing', 'packed', 'shipped', 'out_for_delivery', 'delivered'];
 const PROGRESS_LABEL: Record<string, string> = {
@@ -122,7 +123,9 @@ export function OrderView({
 
   const s = order.shipment;
   const a = order.shippingAddress;
-  const isPaidOnline = order.payment.method === 'razorpay' && order.payment.status === 'paid';
+  const isPaidOnline = order.payment.method !== 'cod' && order.payment.status === 'paid';
+  const isUpi = order.payment.method === 'upi';
+  const upiVerifying = isUpi && order.payment.status === 'verification_pending';
 
   return (
     <div className="space-y-6">
@@ -139,7 +142,19 @@ export function OrderView({
         </div>
       )}
 
-      {order.status === 'pending_payment' && (
+      {order.status === 'pending_payment' && isUpi && order.actions.canSubmitUpi && <UpiPayPanel order={order} token={token} onSubmitted={refresh} />}
+      {order.status === 'pending_payment' && upiVerifying && (
+        <Alert tone="info" title="We’re verifying your payment">
+          Thanks for paying! We’ve received your details{order.payment.upi ? ` (transaction ID ending ${order.payment.upi.utrLast4})` : ''} and will confirm your order once we see the payment in our account — usually within a few hours during business hours. You don’t need to do anything else.
+        </Alert>
+      )}
+      {order.status === 'pending_payment' && isUpi && !order.actions.canSubmitUpi && !upiVerifying && (
+        <Alert tone="warning" title="The payment window has closed">
+          We couldn’t hold your items any longer. If you already paid, message us on WhatsApp with your order number {order.orderNumber} and your UPI transaction ID.
+        </Alert>
+      )}
+
+      {order.status === 'pending_payment' && !isUpi && (
         <Alert
           tone={paymentNotice === 'failed' ? 'danger' : 'warning'}
           title={paymentNotice === 'pending' ? 'Payment is being confirmed' : 'Payment not completed yet'}
@@ -181,7 +196,7 @@ export function OrderView({
               {order.statusLabel}
             </Badge>
             <span className="text-xs text-muted">
-              {order.payment.method === 'cod' ? 'Cash on Delivery' : 'Online payment'} · {PAYMENT_STATUS_LABELS[order.payment.status]}
+              {PAYMENT_METHOD_LABELS[order.payment.method]} · {PAYMENT_STATUS_LABELS[order.payment.status]}
             </span>
           </div>
         </div>

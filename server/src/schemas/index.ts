@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ADJUSTMENT_REASONS, MANUAL_ADJUSTMENT_REASONS } from '../models/InventoryAdjustment.js';
-import { ORDER_STATUSES, PAYMENT_STATUSES } from '../models/Order.js';
+import { ORDER_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES } from '../models/Order.js';
 import { PRODUCT_STATUSES } from '../models/Product.js';
 import {
   AddressSchema,
@@ -234,7 +234,7 @@ export const CartItemSchema = z.object({
 export const CartQuoteSchema = z.object({
   items: z.array(CartItemSchema).max(50),
   couponCode: z.string().trim().toUpperCase().max(30).optional().or(z.literal('').transform(() => undefined)),
-  paymentMethod: z.enum(['razorpay', 'cod']).optional(),
+  paymentMethod: z.enum(PAYMENT_METHODS).optional(),
   email: emailField.optional(),
   phone: phoneField.optional(),
 });
@@ -244,7 +244,7 @@ export const CheckoutSchema = z.object({
   customer: z.object({ name: nameField, email: emailField, phone: phoneField }),
   shippingAddress: z.object(addressFields),
   couponCode: z.string().trim().toUpperCase().max(30).optional().or(z.literal('').transform(() => undefined)),
-  paymentMethod: z.enum(['razorpay', 'cod']),
+  paymentMethod: z.enum(PAYMENT_METHODS),
   whatsappOptIn: z.boolean().default(false),
   customerNote: z.string().trim().max(500).optional(),
   expectedTotal: z.number().int().min(0).optional(),
@@ -265,6 +265,29 @@ export const RetryPaymentSchema = z.object({
   token: z.string().max(64).optional(),
 });
 
+/** UPI IDs look like name@bank (letters, digits, dot, dash, underscore before the @). */
+export const upiIdField = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(100)
+  .regex(/^[a-z0-9._-]{2,256}@[a-z][a-z0-9.-]{1,63}$/, 'Enter a valid UPI ID, e.g. name@okaxis');
+
+export const UpiSubmitSchema = z.object({
+  orderNumber: z.string().max(40),
+  token: z.string().max(64).optional(),
+  payerName: z.string().trim().min(2, 'Enter the name on the paying account').max(100),
+  payerUpiId: upiIdField,
+  // UPI transaction reference (UTR / RRN): 12 digits on every UPI app's payment receipt.
+  utr: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/\s+/g, ''))
+    .pipe(z.string().regex(/^\d{12}$/, 'The UPI transaction ID (UTR) is the 12-digit number on your payment receipt')),
+});
+
+export const UpiRejectSchema = z.object({ reason: z.string().trim().min(3).max(300) });
+
 /* ------------------------------ Orders ------------------------------- */
 
 export const OrderTokenQuery = z.object({ token: z.string().max(64).optional() });
@@ -283,7 +306,7 @@ export const AdminOrderListQuery = z.object({
   q: searchText,
   status: z.enum(ORDER_STATUSES).optional(),
   paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
-  paymentMethod: z.enum(['razorpay', 'cod']).optional(),
+  paymentMethod: z.enum(PAYMENT_METHODS).optional(),
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   attention: boolQuery,
@@ -350,6 +373,13 @@ export const SettingsSchema = z.object({
     estimatedDays: z.string().trim().max(60),
   }),
   cod: z.object({ enabled: z.boolean(), fee: paiseOrZero, maxOrderValue: paiseOrZero }),
+  upi: z
+    .object({
+      enabled: z.boolean(),
+      vpa: z.union([z.literal(''), upiIdField]),
+      payeeName: z.string().trim().max(60),
+    })
+    .refine((v) => !v.enabled || v.vpa, { path: ['vpa'], message: 'Add your UPI ID to turn on UPI payments' }),
   returns: z.object({ windowDays: z.number().int().min(0).max(60) }),
   contact: z.object({
     email: z.union([z.literal(''), z.email().max(254)]),

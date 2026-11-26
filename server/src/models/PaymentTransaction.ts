@@ -7,7 +7,7 @@ import { Schema, model, type Types } from 'mongoose';
  */
 export interface IPaymentTransaction {
   order: Types.ObjectId;
-  provider: 'razorpay' | 'cod' | 'manual';
+  provider: 'razorpay' | 'cod' | 'upi' | 'manual';
   type: 'payment' | 'refund';
   providerOrderId?: string | null;
   providerPaymentId?: string | null;
@@ -28,7 +28,7 @@ export interface IPaymentTransaction {
 const PaymentTransactionSchema = new Schema<IPaymentTransaction>(
   {
     order: { type: Schema.Types.ObjectId, ref: 'Order', required: true, index: true },
-    provider: { type: String, enum: ['razorpay', 'cod', 'manual'], required: true },
+    provider: { type: String, enum: ['razorpay', 'cod', 'upi', 'manual'], required: true },
     type: { type: String, enum: ['payment', 'refund'], required: true },
     providerOrderId: { type: String, default: null },
     providerPaymentId: { type: String, default: null },

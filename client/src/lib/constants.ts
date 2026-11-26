@@ -24,6 +24,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
 
 export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   awaiting_payment: 'Awaiting payment',
+  verification_pending: 'Verifying payment',
   cod_pending: 'COD — to collect',
   paid: 'Paid',
   failed: 'Payment not completed',
@@ -31,6 +32,12 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   refund_pending: 'Refund in progress',
   partially_refunded: 'Partially refunded',
   refunded: 'Refunded',
+};
+
+export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  razorpay: 'Online payment',
+  cod: 'Cash on Delivery',
+  upi: 'UPI (QR)',
 };
 
 export type Tone = 'neutral' | 'rose' | 'gold' | 'success' | 'warning' | 'danger' | 'info';
@@ -61,7 +68,7 @@ export function statusTone(status: string): Tone {
 export function paymentTone(status: string): Tone {
   if (status === 'paid') return 'success';
   if (status === 'failed') return 'danger';
-  if (status === 'awaiting_payment' || status === 'refund_pending') return 'warning';
+  if (status === 'awaiting_payment' || status === 'verification_pending' || status === 'refund_pending') return 'warning';
   if (status === 'refunded' || status === 'partially_refunded') return 'info';
   return 'neutral';
 }

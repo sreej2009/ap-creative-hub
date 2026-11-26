@@ -69,6 +69,9 @@ export async function placeOrder(input: CheckoutInput, user: HydratedDocument<IU
   if (input.paymentMethod === 'razorpay' && !getPaymentGateway()) {
     throw serviceUnavailable('Online payment is not configured yet. Please choose Cash on Delivery.', 'PAYMENT_NOT_CONFIGURED');
   }
+  if (input.paymentMethod === 'upi' && !quote.paymentMethods.upi.available) {
+    throw unprocessable(quote.paymentMethods.upi.reason ?? 'UPI payment is unavailable.', 'UPI_UNAVAILABLE');
+  }
   if (input.paymentMethod === 'cod' && !quote.paymentMethods.cod.available) {
     throw unprocessable(quote.paymentMethods.cod.reason ?? 'Cash on Delivery is unavailable.', 'COD_UNAVAILABLE');
   }
@@ -183,6 +186,8 @@ export async function placeOrder(input: CheckoutInput, user: HydratedDocument<IU
 
   if (isCod) {
     notifications.orderEvent('order_confirmation', order._id);
+  } else if (input.paymentMethod === 'upi') {
+    // Manual UPI: the customer scans the QR on the order page and submits the transaction ID there.
   } else {
     try {
       order = await initiateOnlinePayment(order);
