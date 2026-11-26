@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -109,7 +110,9 @@ export function createApp() {
   app.use('/api', notFoundHandler);
 
   if (env.SERVE_CLIENT) {
-    const dist = path.resolve(process.cwd(), env.CLIENT_DIST_DIR);
+    // Relative to the server package (server/), so it works whatever directory the host starts Node from.
+    const serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+    const dist = path.resolve(serverRoot, env.CLIENT_DIST_DIR);
     const index = path.join(dist, 'index.html');
     if (fs.existsSync(index)) {
       app.use(
