@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "description": "A&P Creative Hub — full-stack e-commerce platform (storefront + admin)",
+  "main": "server/dist/index.js",
   "workspaces": [
     "server",
     "client"
   ],
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "concurrently -n api,web -c magenta,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
@@ -22,5 +23,8 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.6"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
   }
 }
