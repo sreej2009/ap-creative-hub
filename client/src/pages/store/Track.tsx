@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { Navigate, useParams, useSearchParams } from 'react-router';
 import { OrderView } from '../../components/store/OrderView';
 import { ButtonLink } from '../../components/ui/Button';
-import { EmptyState, ErrorState, PageLoader } from '../../components/ui/Feedback';
+import { Alert, EmptyState, ErrorState, PageLoader } from '../../components/ui/Feedback';
 import { useMe } from '../../hooks/useAuth';
 import { useDocumentTitle } from '../../hooks/useStore';
 import { ApiError, api } from '../../lib/api';
@@ -42,6 +42,8 @@ export default function Track() {
   const token = params.get('token') ?? orderToken(orderNumber) ?? undefined;
   const celebrate = params.get('placed') === '1';
   const paymentNotice = params.get('payment') as 'dismissed' | 'pending' | 'failed' | null;
+  const accountCreated = params.get('account') === '1';
+  const { data: user } = useMe();
   useDocumentTitle(`Order ${orderNumber}`);
 
   useEffect(() => {
@@ -78,6 +80,16 @@ export default function Track() {
 
   return (
     <div className="container-page pb-10 pt-8">
+      {accountCreated && (
+        <Alert tone="success" title="Your account is ready" className="mb-4">
+          Sign in any time with {data.customer.email ?? 'your email'} and the password you just set to track this order under My orders.
+        </Alert>
+      )}
+      {!accountCreated && !user && (celebrate || paymentNotice) && (
+        <Alert tone="info" title="Save this page" className="mb-4">
+          You checked out as a guest, so this link is how you track the order. Bookmark it or keep the confirmation email.
+        </Alert>
+      )}
       <OrderView order={data} token={token} celebrate={celebrate} paymentNotice={paymentNotice} queryKey={queryKey} />
     </div>
   );

@@ -16,6 +16,7 @@ import { ApiError, api, errorMessage } from '../../lib/api';
 import { cn, formatPrice } from '../../lib/format';
 import { openRazorpay } from '../../lib/razorpay';
 import { rememberOrderToken } from '../../lib/storage';
+import { passwordRules } from '../../lib/validation';
 import type { Address, PaymentMethod, PlacedOrder } from '../../lib/types';
 import { CouponBox, SummaryRows, useCouponCode } from './Cart';
 
@@ -30,6 +31,8 @@ const schema = z
     whatsappOptIn: z.boolean(),
     saveAddress: z.boolean(),
     note: z.string().trim().max(500).optional(),
+    /** Guests: optional password to create an account with this email. */
+    accountPassword: z.union([z.literal(''), passwordRules]),
   })
   .superRefine((v, ctx) => {
     if (v.addressId !== 'new') return;
@@ -75,7 +78,7 @@ export default function Checkout() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', email: '', phone: '', addressId: 'new', address: {}, paymentMethod: 'razorpay', whatsappOptIn: false, saveAddress: true, note: '' },
+    defaultValues: { name: '', email: '', phone: '', addressId: 'new', address: {}, paymentMethod: 'razorpay', whatsappOptIn: false, saveAddress: true, note: '', accountPassword: '' },
   });
   const { register, handleSubmit, setValue, control, formState, setError } = form;
   const errors = formState.errors as Record<string, { message?: string } & Record<string, { message?: string }>>;
@@ -118,6 +121,7 @@ export default function Checkout() {
       : (v.address as z.infer<typeof addressSchema>);
 
     setStage('placing');
+    const accountPassword = !user && v.accountPassword ? v.accountPassword : undefined;
     let placed: PlacedOrder;
     try {
       placed = await api.post<PlacedOrder>('/checkout/orders', {
@@ -131,9 +135,17 @@ export default function Checkout() {
         saveAddress: !!user && !saved && v.saveAddress,
         expectedTotal: q.total,
         idempotencyKey: idempotencyKey.current,
+        accountPassword,
       });
     } catch (err) {
       setStage('idle');
+      // The account may have been created even if the order then failed (e.g. stock ran out).
+      if (accountPassword) qc.invalidateQueries({ queryKey: ['me'] });
+      if (err instanceof ApiError && err.code === 'EMAIL_TAKEN') {
+        setError('accountPassword', { message: 'This email already has an account. Sign in above, or clear the password to continue as a guest.' });
+        setSubmitError(err.message);
+        return;
+      }
       if (err instanceof ApiError) {
         if (['PRICE_CHANGED', 'CART_CHANGED'].includes(err.code)) {
           qc.invalidateQueries({ queryKey: ['quote'] });
@@ -151,13 +163,14 @@ export default function Checkout() {
       return;
     }
 
-    const { order, trackingToken, payment } = placed;
+    const { order, trackingToken, payment, accountCreated } = placed;
     rememberOrderToken(order.orderNumber, trackingToken);
+    if (accountCreated) qc.invalidateQueries({ queryKey: ['me'] });
     idempotencyKey.current = newKey();
     clear();
     setCoupon('');
     qc.invalidateQueries({ queryKey: ['account', 'orders'] });
-    const orderUrl = `/track/${order.orderNumber}?token=${encodeURIComponent(trackingToken)}`;
+    const orderUrl = `/track/${order.orderNumber}?token=${encodeURIComponent(trackingToken)}${accountCreated ? '&account=1' : ''}`;
 
     if (!payment) {
       navigate(`${orderUrl}&placed=1`, { replace: true });
@@ -228,6 +241,24 @@ export default function Checkout() {
               />
               <Input label="Mobile number" type="tel" inputMode="tel" autoComplete="tel-national" prefix="+91" required {...register('phone')} error={errors.phone?.message} />
             </div>
+            {!user && (
+              <div className="mt-5 rounded-2xl border border-rose-200 bg-blush-50 p-4">
+                <p className="text-sm font-medium">Want to track this order later? Set a password</p>
+                <p className="mt-1 text-sm text-ink-soft">
+                  Guest orders can’t be tracked from an account later. Set a password and we’ll create your account with this email, so you can sign in any time to track
+                  this order and see all your orders. Leave it blank to check out as a guest.
+                </p>
+                <Input
+                  wrapperClassName="mt-3 sm:max-w-sm"
+                  label="Password (optional)"
+                  type="password"
+                  autoComplete="new-password"
+                  hint="At least 8 characters with a letter and a number."
+                  {...register('accountPassword')}
+                  error={errors.accountPassword?.message}
+                />
+              </div>
+            )}
           </SectionCard>
 
           <SectionCard step={2} title="Delivery address">

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { CUSTOMER_COOKIE, issueCsrfToken, setSessionCookie } from '../lib/cookies.js';
 import { notFound } from '../lib/errors.js';
 import { parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { customerActor, loadCustomer, requireCustomer } from '../middleware/auth.js';
@@ -24,6 +25,7 @@ import {
   WishlistSchema,
 } from '../schemas/index.js';
 import { objectId, pageQuery } from '../schemas/common.js';
+import { createSession, registerCustomer } from '../services/auth.service.js';
 import { quoteCart } from '../services/cart.service.js';
 import { getPublicCategory, listPublicCategories } from '../services/category.service.js';
 import { placeOrder } from '../services/checkout.service.js';
@@ -110,9 +112,26 @@ export function storeRoutes() {
   /* ------------------------------ Checkout ----------------------------- */
 
   r.post('/checkout/orders', checkoutLimit, loadCustomer, async (req, res) => {
-    const input = parseBody(CheckoutSchema, req);
-    const result = await placeOrder(input, req.customer);
-    res.status(201).json(result);
+    const { accountPassword, ...input } = parseBody(CheckoutSchema, req);
+    let customer = req.customer;
+    let accountCreated = false;
+    // A guest who chose a password gets an account first, so the order (and the saved
+    // address) belong to it and they can sign in later with this email and password.
+    // A retried request whose order already exists is replayed as before instead.
+    if (!customer && accountPassword && !(await Order.exists({ idempotencyKey: input.idempotencyKey }))) {
+      customer = await registerCustomer({
+        name: input.customer.name,
+        email: input.customer.email,
+        phone: input.customer.phone,
+        password: accountPassword,
+      });
+      const { token, expiresAt } = await createSession(customer, 'customer', req);
+      setSessionCookie(res, CUSTOMER_COOKIE, token, expiresAt);
+      issueCsrfToken(res); // rotate on privilege change
+      accountCreated = true;
+    }
+    const result = await placeOrder({ ...input, saveAddress: input.saveAddress || accountCreated }, customer);
+    res.status(201).json({ ...result, accountCreated });
   });
 
   r.post('/payments/razorpay/verify', checkoutLimit, async (req, res) => {

@@ -270,4 +270,6 @@ export interface PlacedOrder {
   order: CustomerOrder;
   trackingToken: string;
   payment: RazorpayCheckout | null;
+  /** True when a guest set a password at checkout and their account was created. */
+  accountCreated?: boolean;
 }

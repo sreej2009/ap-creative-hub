@@ -4,9 +4,10 @@ import { setPaymentGatewayForTests } from '../src/integrations/razorpay.js';
 import { Coupon, CouponUsage } from '../src/models/Coupon.js';
 import { StoreSettings } from '../src/models/misc.js';
 import { Order } from '../src/models/Order.js';
+import { User } from '../src/models/User.js';
 import { computeDiscount } from '../src/services/coupon.service.js';
 import { invalidateSettingsCache } from '../src/services/settings.service.js';
-import { TestClient, checkoutBody, connectTestDb, createProduct, disconnectTestDb, loginAs, mockGateway, resetDb } from './helpers.js';
+import { TestClient, checkoutBody, connectTestDb, createProduct, createUser, disconnectTestDb, loginAs, mockGateway, resetDb } from './helpers.js';
 
 const app = createApp();
 
@@ -213,3 +214,72 @@ describe('coupons', () => {
     expect(dup.status).toBe(409);
   });
 });
+
+describe('create an account at checkout', () => {
+  it('creates the account, signs the guest in and puts the order on it', async () => {
+    const p = await createProduct({ price: 50000, stock: 5 });
+    const c = await TestClient.create(app);
+    const res = await c.post('/api/v1/checkout/orders', checkoutBody([{ productId: String(p._id), quantity: 1 }], { accountPassword: 'Earrings2026' }));
+    expect(res.status).toBe(201);
+    expect(res.body.accountCreated).toBe(true);
+
+    const user = await User.findOne({ email: 'priya@example.com' });
+    expect(user).toMatchObject({ name: 'Priya Sharma', phone: '9876543210', role: 'customer' });
+    expect(user!.addresses).toHaveLength(1);
+    const order = await Order.findOne({ orderNumber: res.body.order.orderNumber });
+    expect(String(order!.user)).toBe(String(user!._id));
+
+    // Already signed in on this browser…
+    const mine = await c.get('/api/v1/account/orders');
+    expect(mine.status).toBe(200);
+    expect(mine.body.items.map((o: { orderNumber: string }) => o.orderNumber)).toEqual([res.body.order.orderNumber]);
+
+    // …and can sign in later with the same email and password.
+    const later = await TestClient.create(app);
+    expect((await later.post('/api/v1/auth/login', { email: 'priya@example.com', password: 'Earrings2026' })).status).toBe(200);
+    expect((await later.get('/api/v1/account/orders')).body.items).toHaveLength(1);
+  });
+
+  it('refuses an email that already has an account, without placing the order', async () => {
+    await createUser('customer', { email: 'priya@example.com' });
+    const p = await createProduct({ stock: 5 });
+    const c = await TestClient.create(app);
+    const res = await c.post('/api/v1/checkout/orders', checkoutBody([{ productId: String(p._id), quantity: 1 }], { accountPassword: 'Earrings2026' }));
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('EMAIL_TAKEN');
+    expect(await Order.countDocuments()).toBe(0);
+  });
+
+  it('rejects a weak password and creates nothing', async () => {
+    const p = await createProduct({ stock: 5 });
+    const c = await TestClient.create(app);
+    const res = await c.post('/api/v1/checkout/orders', checkoutBody([{ productId: String(p._id), quantity: 1 }], { accountPassword: 'short' }));
+    expect(res.status).toBe(400);
+    expect(res.body.error.details.accountPassword).toBeDefined();
+    expect(await User.countDocuments({ email: 'priya@example.com' })).toBe(0);
+    expect(await Order.countDocuments()).toBe(0);
+  });
+
+  it('ignores the password for a customer who is already signed in', async () => {
+    const p = await createProduct({ stock: 5 });
+    const { client, user } = await loginAs('customer', app);
+    const res = await client.post('/api/v1/checkout/orders', checkoutBody([{ productId: String(p._id), quantity: 1 }], { accountPassword: 'Earrings2026' }));
+    expect(res.status).toBe(201);
+    expect(res.body.accountCreated).toBe(false);
+    expect(await User.countDocuments({ email: 'priya@example.com' })).toBe(0);
+    expect(String((await Order.findOne({ orderNumber: res.body.order.orderNumber }))!.user)).toBe(String(user._id));
+  });
+
+  it('replays a retried request instead of failing on the new account', async () => {
+    const p = await createProduct({ stock: 5 });
+    const body = checkoutBody([{ productId: String(p._id), quantity: 1 }], { accountPassword: 'Earrings2026' });
+    const first = await (await TestClient.create(app)).post('/api/v1/checkout/orders', body);
+    expect(first.status).toBe(201);
+    const retry = await (await TestClient.create(app)).post('/api/v1/checkout/orders', body);
+    expect(retry.status).toBeLessThan(300);
+    expect(retry.body.order.orderNumber).toBe(first.body.order.orderNumber);
+    expect(await Order.countDocuments()).toBe(1);
+    expect(await User.countDocuments({ email: 'priya@example.com' })).toBe(1);
+  });
+});
+

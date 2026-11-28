@@ -250,6 +250,8 @@ export const CheckoutSchema = z.object({
   expectedTotal: z.number().int().min(0).optional(),
   saveAddress: z.boolean().default(false),
   idempotencyKey: z.string().regex(/^[A-Za-z0-9-]{16,64}$/, 'Invalid idempotency key'),
+  /** Guests only: create a customer account with this password and place the order on it. */
+  accountPassword: passwordField.optional(),
 });
 export type CheckoutInput = z.output<typeof CheckoutSchema>;
 

@@ -13,13 +13,8 @@ import { DemoLoginHint } from '../../demo/DemoBanner';
 import { useAuthActions, useMe } from '../../hooks/useAuth';
 import { useDocumentTitle } from '../../hooks/useStore';
 import { ApiError, api, errorMessage } from '../../lib/api';
+import { passwordRules } from '../../lib/validation';
 
-const passwordRules = z
-  .string()
-  .min(8, 'Use at least 8 characters')
-  .max(128)
-  .regex(/[A-Za-z]/, 'Include at least one letter')
-  .regex(/[0-9]/, 'Include at least one number');
 
 /** Only allow same-site relative redirects after login. */
 function safeNext(next: string | null) {
